@@ -118,6 +118,8 @@ xts.ds.c <- downSample(xts.c, avg_time)
 plot(xts.ds.c)
 ```
 
+## Compute the master dataframe
+
 ```{r, echo = TRUE}
 get_ts_master_dataFrame <- function(fn.ts.wdir, fn.ts.conc, fn.ts.ws, avg_time){
   
@@ -509,7 +511,7 @@ return(sea.w)
 For a dataset `df.new`, the function returns a column with weekly seasonality for each day of the `df.new` data frame.  For  eg. for a 3 day data-set with `{Sunday, Monday, Tuesday}`, the funciton returns an array `{Seasonal Sunday, Seasonal Monday, Seasonal Tuesday}`
 
 ### Usage
-```{r}
+```{r, warning = FALSE}
 df.sea.w <- getSeasonalData_August(avg_time) # Get seasonal data
 
 df.new$sea.w <- pad_df_weeklySea(df.new, df.sea.w)

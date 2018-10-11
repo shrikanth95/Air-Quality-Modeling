@@ -97,6 +97,9 @@ plot(xts.ds.c)
 
 ![](AQM_Functions_Summary_files/figure-markdown_github/unnamed-chunk-5-1.png)
 
+Compute the master dataframe
+----------------------------
+
 ``` r
 get_ts_master_dataFrame <- function(fn.ts.wdir, fn.ts.conc, fn.ts.ws, avg_time){
   
@@ -505,17 +508,7 @@ For a dataset `df.new`, the function returns a column with weekly seasonality fo
 df.sea.w <- getSeasonalData_August(avg_time) # Get seasonal data
 
 df.new$sea.w <- pad_df_weeklySea(df.new, df.sea.w)
-```
 
-    ## Warning in sea.w[idx] <- rep(df.sea.w$conc[idx], length(idx)/(24/
-    ## avg_time)): number of items to replace is not a multiple of replacement
-    ## length
-
-    ## Warning in sea.w[idx] <- rep(df.sea.w$conc[idx], length(idx)/(24/
-    ## avg_time)): number of items to replace is not a multiple of replacement
-    ## length
-
-``` r
 df.new$desea.w <- df.new$conc - df.new$sea.w # Deseasoned by weekly sesonality
 
 head(df.new)
