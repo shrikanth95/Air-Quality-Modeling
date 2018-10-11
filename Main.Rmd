@@ -1,0 +1,195 @@
+---
+title: "Time Series Analysis for Climo with Wind Data"
+output: rmarkdown::github_document
+  # beamer_presentation:
+  #   slide_level: 2
+  #   keep_tex: TRUE
+  #   fig_caption: yes
+  #   toc: true
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(png)
+library(grid)
+library(quantreg)
+library(highfrequency)
+library(TTR)
+library(stats)
+library(lubridate)
+library(timeSeries)
+library(dplyr)
+library(ggplot2)
+library("gridExtra")
+library("cowplot")
+theme_set(theme_grey())
+library(reshape2)
+library(scales)
+library(tidyverse);
+source("src/TSA_source.R")
+source("TSA_Data_Source.R")
+source("src/plotting_functions.R")
+```
+
+
+# Extraction
+
+```{r, echo = TRUE, warning=FALSE}
+
+C_data <- read.csv(file = 'Raw Sensor Data/Climo_co_corr_IISc_1_10.csv', header = TRUE, sep = ";")
+cTime <-  as.POSIXct(C_data$Time)#(,"%Y-%m-%d %H:%M:%S", tz = "")
+ws_c <- as.numeric(mean(diff(cTime)))*60 # sampling frequecy (seconds)
+xts.c <- xts(x = C_data$Value, order.by = cTime)
+
+
+daily_threshold <- floor(1170) # Expected number of samples per day
+frequency_tolerance.c = 10
+frequency_tolerance.w = 10
+fault_window = "hours" # to identify faults in the data
+std_tolerance = 0.01
+dir.create("plots",showWarnings=FALSE,recursive=TRUE)
+
+```
+
+
+
+## Main dataframe
+
+```{r overall_dataset, echo=TRUE, warning=FALSE, fig.height=5}
+
+avg_time = 0.5
+
+# df.new <- get_ts_master_dataFrame('Raw Sensor Data/Wind_direction_corr_IISc_1_20.csv', 
+#                               'Raw Sensor Data/Climo_co_corr_IISc_1_10.csv', 
+#                               'Raw Sensor Data/Wind_speed_corr_IISc_1_20.csv', 
+#                               avg_time)
+df.new <- getMasterdf_Sepetember(avg_time)
+refTime <- as.POSIXct(df.new$time)
+
+# Plot overall time series
+plot.TS_Overall(xts.c, type = "CO Concentrations",folder = "plots")
+# Plot Dataframe with fautly rows in red
+plot.DF_faults(df.new,df.specs = "Carbon Monoxide", avg_time, folder = "plots")
+
+
+```
+
+- Concentrations without corresponding wind speed and wind direction is highlighted in red.
+
+```{r, echo = TRUE}
+df.new.clean <- df.new[complete.cases(df.new), ]
+df.new.1 <- df.new[df.new$wos==1, ] 
+```
+
+## Wind Directions after 5min Downsampling
+
+```{r wind_directions, echo = TRUE, fig.cap= "Wind Directions after 5min Downsampling"}
+xts.ds.w <- xts(df.new.1$wdir, order.by = refTime[1:length(df.new.1$wdir)])
+plot(xts.ds.w, main = paste("Wind Directions Downsampled by ",as.character(avg_time*60),"min",sep=""))
+```
+
+## 5 minute Downsampling
+```{r wind_directions_hist, echo = TRUE, fig.height=5}
+hist(df.new$wdir, main = "Histogram of wind directions", xlab = "Angle w.r.t to North")
+
+```
+
+- Majority of the directions are limited to $130^{\circ}$ and $270^{\circ}$
+
+# Effect of Wind Speed
+
+## Effect of wind Speed on Concentrations
+
+```{r sea_conc_ws, echo=TRUE, fig.height=5}
+
+# df.new <- get_ts_master_dataFrame(sample.wd, sample.c, sample.ws, avg_time)
+# refTime <- as.POSIXct(rownames(df.new))
+df.seasonal <- getSeasonality(df.new, avg_time)
+# Plots the daily seasonality w.r.t wind speed and wind direction
+plot.DF_Seasonal_c_ws(df.seasonal, "Seasonal plot test", avg_time, "plots")
+
+```
+
+- With seasonality, the concentration observed has no bearing on the wind speed as observed from 18:00 to 00:00 hours.
+
+
+## Correlation of concentration with wind speed
+```{r ws_conc_corr, echo = TRUE, fig.height=5}
+folder = "plots"
+df.specs = "test"
+plot.Corr_ws_c(df.seasonal, df.specs, avg_time)
+```
+
+## Effect of wind speed on de-seasoned data
+
+```{r scat_ws_conc, echo = TRUE, warning= FALSE, fig.height= 5}
+plot.Scat_ws_deseasoned(df.new, df.seasonal, df.specs, avg_time)
+
+```
+
+# Effect of wind direction on concentration
+
+## Concentration vs Wind Direction
+
+```{r warning=FALSE, echo = TRUE, fig.height= 5}
+plot.Hist_conc_wd(df.new, df.specs, avg_time)
+```
+
+
+## Concentration vs Wind Direction
+
+```{r avg_ws_wdir, echo  = TRUE, warning=FALSE, fig.height= 5}
+# df.new.clean <- df.new[complete.cases(df.new), ]
+plot.conc_ws_on_wd(df.new, df.specs, avg_time)
+```
+
+- Wind directions $90^{\circ}$ and $315^{\circ}$ result in similar concentrations despite having higher wind speeds.
+
+## Effect of Wind Direction on de-seasoned data
+
+```{r scat_desea_ws_wdir, echo = TRUE}
+# avg_time = 1
+
+df.seasonal <- getSeasonality(df.new, avg_time)
+
+plot.scat_ws_decon(df.new, df.seasonal, df.specs, avg_time)
+
+```
+
+# Analysis with Variance and Concentration
+
+## Noise variance and concentration characteristic for Climo
+
+```{r noise_var_conc_char, echo = TRUE, fig.height= 5, warning=FALSE, fig.cap="\\label{fig:var_C_C}"}
+plot.NV_conc_char(df.new, df.seasonal, df.specs, avg_time)
+```
+
+
+## Average of deseasoned concentrations conditioned by wind speed
+
+```{r binning_ws_conc, echo = TRUE, fig.height=5, warning =FALSE}
+plot.conc_on_ws(df.new, df.seasonal, df.specs, avg_time)
+```
+
+
+## Z-score(Conc) vs Z-score(Wind speed) from 9AM to 6PM
+
+```{r zscore_comp, echo = TRUE, fig.height=5, warning=FALSE, fig.cap="\\label{fig:z_W_C_var}"}
+plot.Zconc_Zws(df.new, df.specs, avg_time)
+
+```
+
+# Deseasoning with weekly seasonality 
+
+```{r, echo=TRUE, warning=FALSE}
+# avg_time= 1/12
+# 
+# df.new <- getMasterdf_Sepetember(avg_time)
+
+df.sea.d <- getSeasonality(df.new, avg_time)
+df.sea.w <- getSeasonalData_August(avg_time)
+
+plot.scat_ws_wdecon(df.new, df.sea.d,df.sea.w, avg_time)
+```
+

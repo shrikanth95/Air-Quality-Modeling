@@ -1,0 +1,752 @@
+---
+title: "Time Series Analysis on Climo with Wind Directions"
+output: rmarkdown::github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(tidy.opts=list(width.cutoff=80),tidy=TRUE)
+
+library(highfrequency)
+library(TTR)
+library(stats)
+library(lubridate)
+library(timeSeries)
+library(dplyr)
+library(ggplot2)
+library("gridExtra")
+library("cowplot")
+theme_set(theme_grey())
+
+library(reshape2)
+library(scales)
+library(tidyverse);
+source("TSA_source.R")
+```
+
+# Extraction
+
+```{r}
+
+C_data <- read.csv(file = 'Climo_co_corr_IISc_1_10.csv', header = TRUE, sep = ";")
+cTime <-  as.POSIXct(C_data$Time)#(,"%Y-%m-%d %H:%M:%S", tz = "")
+
+W_data.d <- read.csv(file = 'Wind_direction_corr_IISc_1_20.csv', header = TRUE, sep = ";")
+wTime.d <-  as.POSIXct(W_data.d$Time)#(,"%Y-%m-%d %H:%M:%S", tz = "")
+
+W_data.s <- read.csv(file = 'Wind_speed_corr_IISc_1_20.csv', header = TRUE, sep = ";")
+wTime.s <-  as.POSIXct(W_data.s$Time)#(,"%Y-%m-%d %H:%M:%S", tz = "")
+
+
+C_xts <- xts(x = C_data$Value, order.by = cTime)
+len_c <- length(C_xts)
+ws_c <- as.numeric(mean(diff(cTime)))*60 # sampling frequecy (seconds)
+
+W_xts.d <- xts(x = W_data.d$Value, order.by = wTime.d)
+len_w.d <- length(W_xts.d)
+ws_w.d <- as.numeric(mean(diff(wTime.d)))*60 # sampling frequecy (seconds)
+
+W_xts.s <- xts(x = W_data.s$Value, order.by = wTime.s)
+len_w.s <- length(W_xts.s)
+ws_w.s <- as.numeric(mean(diff(wTime.s)))*60 # sampling frequecy (seconds)
+
+daily_threshold <- floor(24*3600/ws_c) # Expected number of samples per day
+frequency_tolerance.c = 10
+frequency_tolerance.w = 10
+fault_window = "hours" # to identify faults in the data
+std_tolerance = 0.01
+
+```
+
+
+```{r}
+plot(C_xts, main = "CO")
+```
+Original CO data
+
+```{r}
+hist(W_xts.d, main = "Histogram of wind directions", xlab = "Angle w.r.t to North")
+```
+
+Original Wind Directions 
+
+```{r}
+plot(W_xts.s, main = "Wind Speed", xlab = "Time")
+```
+
+Original wind speed
+
+```{r eval=FALSE, include=FALSE}
+days.w <- split(W_xts.d, f = "days")
+days.c <- split(C_xts, f = "days")
+
+
+days_summary <- removeAnomaly(days.w, threshold = floor(24*3600/ws_w.d), type = "Wind")
+day_h.w <- days_summary[[1]]
+day_dict.w <- days_summary[[2]]
+
+days_summary <- removeAnomaly(days.c, threshold = floor(24*3600/ws_c), type = "Pollutant")
+day_h.c <- days_summary[[1]]
+day_dict.c <- days_summary[[2]]
+
+sample_day.w <- days.w[[ day_dict.w[[7]] ]]
+
+# for (day in days){
+#   if(date(start(day)) == date(start(sample_day)))
+#     sample_day.c = day
+# }
+# plot(sample_day.w, ylab = "Concentrations")
+plot(sample_day.c)
+avg_time = 1/6
+sample_day_ds.c <- downSample(sample_day.c,avg_time)
+sample_day_ds.w <- downSample(sample_day.w,avg_time)
+plot(sample_day_ds.c)
+plot(sample_day_ds.w)
+
+x <- coredata(sample_day_ds.w)
+y <- coredata(sample_day_ds.c)
+
+x.nor <- x#(x - mean(x))/var(x)[1]
+y.nor <- y#(y - mean(y))/var(y)[1]
+unique.x.norm <- unique(x.nor)
+conditional.mean.y<-c()
+for(i in 1:length(unique.x.norm)){
+  conditional.mean.y<-c(conditional.mean.y,mean(y.nor[x.nor==unique.x.norm[i]]))
+}
+# 
+# plot(unique.x.norm,conditional.mean.y)
+# plot(x.nor,y.nor)
+# plot(log(x.nor),y.nor)
+# plot(x.nor,log(y.nor))
+# plot(log(x.nor),log(y.nor))
+# table(x.nor,y.nor)
+
+```
+
+## Raw wind data
+
+```{r}
+days.ws <- split(W_xts.s, f = "days")
+days.c <- split(C_xts, f = "days")
+days.wd <- split(W_xts.d, f = "days")
+
+day_id = 2
+par(mfrow = c(2,1))
+plot(days.ws[[day_id]],ylab = "Speed", main = weekdays(start(days.ws[[day_id]])))
+plot(days.wd[[day_id]], ylab = "Direction")
+```
+
+```{r}
+day_id = 3
+par(mfrow = c(2,1))
+plot(days.ws[[day_id]],ylab = "Speed", main = weekdays(start(days.ws[[day_id]])))
+plot(days.wd[[day_id]], ylab = "Direction")
+```
+
+```{r}
+day_id = 4
+par(mfrow = c(2,1))
+plot(days.ws[[day_id]],ylab = "Speed", main = weekdays(start(days.ws[[day_id]])))
+plot(days.wd[[day_id]], ylab = "Direction")
+```
+
+```{r}
+day_id = 5
+par(mfrow = c(2,1))
+plot(days.ws[[day_id]],ylab = "Speed", main = weekdays(start(days.ws[[day_id]])))
+plot(days.wd[[day_id]], ylab = "Direction")
+```
+
+```{r}
+day_id = 6
+par(mfrow = c(2,1))
+plot(days.ws[[day_id]],ylab = "Speed", main = weekdays(start(days.ws[[day_id]])))
+plot(days.wd[[day_id]], ylab = "Direction")
+```
+
+
+```{r}
+day_id = 7
+par(mfrow = c(2,1))
+plot(days.ws[[day_id]],ylab = "Speed", main = weekdays(start(days.ws[[day_id]])))
+plot(days.wd[[day_id]], ylab = "Direction")
+```
+
+```{r}
+days.w <- split(W_xts.d, f = "days")
+days.c <- split(C_xts, f = "days")
+
+
+days_summary <- removeAnomaly(days.w, threshold = floor(24*3600/ws_w.d), type = "Wind")
+day_h.w <- days_summary[[1]]
+day_dict.w <- days_summary[[2]]
+
+days_summary <- removeAnomaly(days.c, threshold = floor(24*3600/ws_c), type = "Pollutant")
+day_h.c <- days_summary[[1]]
+day_dict.c <- days_summary[[2]]
+
+sample_week.w <- days.w[3:9]
+start_date = date(start(sample_week.w[[1]]))
+i = 1
+for (day in days.c){
+  if(date(start(day)) == start_date){
+    idx = i;break;
+  }
+}
+sample_week.c <- days.c[3:9]
+
+# start(sample_week.c[[1]])
+# start(sample_week.w[[1]])
+
+sample_week_ds.c <- list()
+sample_week_ds.w <- list()
+avg_time = 1/12
+for (i in  1:7){
+  sample_week_ds.c[[i]] <- downSample(sample_week.c[[i]], avg_time)
+  sample_week_ds.w[[i]] <- downSample(sample_week.w[[i]],avg_time)
+}
+
+x <- c()
+y <- c()
+for (dow in 1:7){
+  sample_day.w <- sample_week.w[[dow]]
+  sample_day.c <- sample_week.c[[dow]]
+  start_time <- as.POSIXlt(paste(date(start(sample_day.w)),"00:00:00"), tz = "")
+  end_time <- as.POSIXlt(paste(date(start(sample_day.w)),"23:45:00"), tz = "")
+  x <- c(x, coredata(window(sample_day.w, start= start_time, end = end_time)))
+  y <- c(y, coredata(window(sample_day.c, start= start_time, end = end_time)))
+}
+
+x.nor <- x#(x - mean(x))/var(x)[1]
+y.nor <- y
+unique.x.norm <- unique(x.nor)
+conditional.mean.y <- c()
+cond.quant_l.y <- c()
+cond.quant_h.y <- c()
+for(i in 1:length(unique.x.norm)){
+  conditional.mean.y <- c(conditional.mean.y, mean(y.nor[x.nor==unique.x.norm[i]]))
+  cond.quant_l.y <- c(cond.quant_l.y, quantile(y.nor[x.nor==unique.x.norm[i]], 0.05))
+  cond.quant_h.y <- c(cond.quant_h.y, quantile(y.nor[x.nor==unique.x.norm[i]], 0.95))
+}
+
+df <- data.frame(uni.x = rep(unique.x.norm, 3), val = c(conditional.mean.y, cond.quant_h.y, cond.quant_l.y), type = c(rep("Mean", length(unique.x.norm)), rep("95% Quantile", length(unique.x.norm)),rep("5% Quantile", length(unique.x.norm))))
+
+ggplot(df, aes(x = uni.x, y = val, color = type)) + geom_line() + ylim(0,max(df$val)) + labs(color = "Legend")+ xlab("Wind Direction") + ylab("Average Concentration") 
+```
+
+Average concentration for each wind direction for all wind speeds.  
+
+## Main dataframe
+
+```{r}
+
+avg_time = 1/12
+sample.wd <- W_xts.d
+sample.c <- C_xts
+sample.ws <- W_xts.s
+
+df.new <- get_ts_master_dataFrame(sample.wd, sample.c, sample.ws, avg_time)
+refTime <- as.POSIXct(rownames(df.new))
+df.new.fault <- df.new[rowSums(is.na(df.new[,c(1,2,3)]))>0,]
+
+fault <- df.new.fault$conc
+fault.time <- as.POSIXct(rownames(df.new.fault))
+fault.xts <- xts(fault, order.by = fault.time)
+overall <- xts(df.new$conc, order.by = refTime)
+comparison<- merge(overall, fault.xts, join = "left")
+df.comp <- data.frame(x = time(comparison), real.data <- coredata(comparison))
+df.m <- melt(df.comp, id.vars = "x")
+ggplot(df.m, aes(x = x,y = value, color = variable)) + geom_line() + scale_colour_manual(values=c(overall = "grey", fault.xts = "red")) + labs(color = "Legend") +  ylab("Concentration") + xlab("Time")
+
+
+
+```
+
+```{r}
+df.new <- df.new[complete.cases(df.new), ]
+df.new.1 <- df.new[df.new$wos==1, ] 
+
+df.new.1 <- df.new[(df.new$hour>=16), ]
+df.new.1 <- df.new.1[(df.new.1$hour<=21), ]
+head(df.new.1)
+```
+
+
+```{r, eval = FALSE}
+xts.ds.w <- xts(df.new.1$wdir, order.by = refTime[1:length(df.new.1$wdir)])
+plot(xts.ds.w)
+```
+
+```{r}
+
+p1 <- ggplot(df.new.1, aes(x = wdir, y = conc)) + geom_point() + facet_wrap(~ hour, ncol = 2) + ylab("Concentraitons")
+
+p2 <- ggplot(df.new.1, aes(x = wdir)) + geom_histogram(binwidth = 10) + facet_wrap(.~hour,  ncol = 2) + theme(axis.text.x = element_text(angle=0 , size = 10)) + ylab ("Frequency")
+
+grid.arrange(p1, p2, nrow = 1)
+
+```
+
+
+Effect of wind between 4PM and 9PM
+
+## Wind direction transition matrix 
+
+```{r, eval = FALSE, include = FALSE}
+x <- df.new$wdir
+p <- matrix(nrow = length(unique(x)), ncol = length(unique(x)), 0)
+windDict <- 1:length(unique(x))
+names(windDict) <- as.character(sort(unique(x)))
+for (t in 1:(length(x)-1)) p[windDict[[as.character(x[t])]], 
+                             windDict[[as.character(x[t+1])]]] <- p[windDict[[as.character(x[t])]],
+                                                                    windDict[[as.character(x[t+1])]]] + 1
+
+for (i in 1:length(unique(x))) p[i, ] <- p[i, ] / sum(p[i, ])
+
+tmp <- sort(unique(as.vector(p)))
+{
+  test <- image(p,xaxt = "n", yaxt = "n", col = heat.colors(11))
+  axis(1, at=seq(0, 1,1/10), labels=names(windDict))
+  axis(2, at=seq(0, 1,1/10), labels=names(windDict))
+  # legend("right",legend = tmp, fill= heat.colors(length(tmp)), title="Transition prob.", )
+}
+
+rownames(p) <- names(windDict)
+colnames(p) <- names(windDict)
+
+```
+
+## Spearman's Correlation
+
+```{r echo=TRUE, message=FALSE, warning=FALSE, include= TRUE}
+dow <- c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
+
+rank.corr <- data.frame(lag <- c(), acf <- c(), day<- c())
+for (j in 1:7){
+  lag.range = 1:20
+  for (i in lag.range){
+    df.corr <- df.new[df.new$dow == dow[j],]  
+    l = nrow(df.corr)
+    time.corr <- c()
+    for (i in lag.range){
+      corr<- cor.test(x=df.corr$wdir[i:l], y=df.corr$wdir[1:(l-i+1)], method = 'spearman')
+      time.corr <- c(time.corr, unname(corr$estimate))
+    }
+  }
+  rank.corr <- rbind(rank.corr, data.frame(lag = lag.range, acf= time.corr, day = rep(dow[j], length(lag.range)))) 
+}
+ggplot(rank.corr, aes(x = lag, y = acf)) + geom_line() + facet_wrap(.~day, ncol = 3)+ ylab("Auto-correlation Funciton") + ggtitle("ACF over different days")
+```
+
+```{r message=FALSE, warning=FALSE}
+dow <- c("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
+
+rank.corr <- data.frame(lag <- c(), acf <- c(), day<- c())
+
+lag.range = 1:20
+for (i in lag.range){
+  df.corr <- df.new[df.new$wos == 1,]  
+  l = nrow(df.corr)
+  time.corr <- c()
+  for (i in lag.range){
+    corr<- cor.test(x=df.corr$wdir[i:l], y=df.corr$wdir[1:(l-i+1)], method = 'spearman')
+    time.corr <- c(time.corr, unname(corr$estimate))
+  }
+}
+rank.corr <- data.frame(lag = lag.range, acf= time.corr)
+
+ggplot(rank.corr, aes(x = lag, y = acf)) + geom_line() + ylab("Auto-correlation Funciton") + ggtitle("ACF over week")
+```
+
+```{r}
+
+
+{
+  par(mfrow = c(1,2))
+  plot(rank(df.corr$wdir[1:(l-1)]),rank(df.corr$wdir[2:l]), main = "rank(df[1,l-1]) and rank(df[2,l])
+")
+  plot(rank(df.corr$wdir[1:(l-2)]),rank(df.corr$wdir[3:l]), main = "rank(df[1,l-2]) and rank(df[3,l])")
+}
+```
+
+Comparison of coeffecients by Spearman and Standard correlation
+```{r echo = TRUE, warning=FALSE}
+co.wdir.1 <- cor(df.corr$wdir[1:(l-1)],df.corr$wdir[2:l])
+co.wdir.2 <- cor(df.corr$wdir[1:(l-2)],df.corr$wdir[3:l])
+
+sp.wdir.1 <- cor.test(x=df.corr$wdir[1:(l-1)], y=df.corr$wdir[2:l], method = 'spearman') 
+sp.wdir.2 <- cor.test(x=df.corr$wdir[1:(l-2)], y=df.corr$wdir[3:l], method = 'spearman') 
+
+c(co.wdir.1, unname(sp.wdir.1$estimate), co.wdir.2, unname(sp.wdir.2$estimate))
+```
+
+## Correlations by thresholding wind speed
+
+```{r, echo = TRUE}
+
+w.thresholds <- c(0.1, 0.2, 0.3, 0.4)
+df <- data.frame(uni.x <- c(), val <- c(), type<- c(), w.thresh <- c())
+
+for (j in 1:length(w.thresholds)){
+  df.th <- df.new.1[df.new.1$wspeed > w.thresholds[j],]
+  x.nor <- df.th$wdir 
+  y.nor <- df.th$conc
+  unique.x.norm <- unique(x.nor)
+  conditional.mean.y <- c()
+  cond.quant_l.y <- c()
+  cond.quant_h.y <- c()
+  for(i in 1:length(unique.x.norm)){
+    conditional.mean.y <- c(conditional.mean.y, mean(y.nor[x.nor==unique.x.norm[i]]))
+    cond.quant_l.y <- c(cond.quant_l.y, quantile(y.nor[x.nor==unique.x.norm[i]], 0.05))
+    cond.quant_h.y <- c(cond.quant_h.y, quantile(y.nor[x.nor==unique.x.norm[i]], 0.95))
+  }
+  
+  df <- rbind(df, data.frame(uni.x = rep(unique.x.norm, 3), val = c(conditional.mean.y, cond.quant_h.y, cond.quant_l.y), type = c(rep("Mean", length(unique.x.norm)), rep("95% Quantile", length(unique.x.norm)),rep("5% Quantile", length(unique.x.norm))), w.thresh = rep(w.thresholds[j], (length(unique.x.norm)*3))))
+  
+}
+
+ggplot(df, aes(x = uni.x, y = val, color = type)) + geom_line() + ylim(0,max(df$val)) + facet_wrap(.~w.thresh) + labs(color = "Legend")+ xlab("Wind Direction") + ylab("Average Concentration") 
+```
+
+
+```{r}
+df.batch <- df.new.1[df.new.1$wspeed > 0.3,]
+
+p1 <- ggplot(df.batch, aes(x = wdir, y = conc, color = wspeed)) + geom_point() + facet_wrap(~ hour, ncol = 2) + xlab("Wind Direction") + ylab("Concentraitons") + labs(color = "Wind Speed")
+
+p2 <- ggplot(df.batch, aes(x = wdir)) + geom_histogram(binwidth = 10) + facet_wrap(.~hour,  ncol = 2) + theme(axis.text.x = element_text(angle=0 , size = 10)) + ylab ("Frequency") + xlab("Wind Direction") + ylab("Frequency") 
+
+grid.arrange(p1, p2, nrow = 1)
+
+```
+Effect of wind between 4 and 9 PM
+
+# Correlation of concentration with wind speed
+```{r}
+ggplot(df.new, aes(x = wspeed, y = conc, color = wdir)) + geom_point() + xlab("Wind Speed") + ylab("Concentration") + ggtitle("Correlations with wind speeds over all days")
+```
+
+```{r}
+df.batch.1 <- df.new[df.new$dow == "Sunday",]
+ggplot(df.batch.1, aes(x = wspeed, y = conc, color = wdir)) + geom_point() + facet_wrap(.~wos) + xlab("Wind Speed") + ylab("Concentration") + ggtitle("Sunday")
+
+```
+
+
+```{r fig.height=9}
+df.batch.1 <- df.new[df.new$dow == "Sunday",]
+df.batch.1<- df.batch.1[df.batch.1$hour>=15,]
+df.batch.1<- df.batch.1[df.batch.1$hour<=23,]
+#df.batch.1$time[2] <- as.POSIXct(rownames(df.batch.1))
+
+p1<- ggplot(df.batch.1, aes(x = wspeed, y = conc)) + geom_point() + facet_grid(hour~wos) + xlab("Wind Speed") + ylab("Concentration") + ggtitle("Sunday")
+p2 <- ggplot(df.batch.1, aes(x = minute, y = wspeed)) + geom_line() + xlab("Time") + ylab("Wind Speed") + facet_wrap(.~wos, nrow = 2)
+
+plot_grid(p1, p2,  align = "v",nrow = 2, rel_heights = c(0.775, 0.275))
+#grid.arrange(p1, p2, nrow = 2)
+
+```
+
+```{r}
+df.batch.1 <- df.new[df.new$dow == "Saturday",]
+ggplot(df.batch.1, aes(x = wspeed, y = conc, color = wdir)) + geom_point() + facet_wrap(.~wos) + xlab("Wind Speed") + ylab("Concentration") + ggtitle("Saturday")
+
+```
+
+
+```{r fig.height=9}
+df.batch.1 <- df.new[df.new$dow == "Saturday",]
+df.batch.1<- df.batch.1[df.batch.1$hour>=15,]
+df.batch.1<- df.batch.1[df.batch.1$hour<=23,]
+#df.batch.1$time[2] <- as.POSIXct(rownames(df.batch.1))
+
+p1<- ggplot(df.batch.1, aes(x = wspeed, y = conc)) + geom_point() + facet_grid(hour~wos) + xlab("Wind Speed") + ylab("Concentration") + ggtitle("Saturday")
+p2 <- ggplot(df.batch.1, aes(x = minute, y = wspeed)) + geom_line() + xlab("Time") + ylab("Wind Speed") + facet_wrap(.~wos, nrow = 2)
+
+plot_grid(p1, p2,  align = "v",nrow = 2, rel_heights = c(0.775, 0.275))
+
+#grid.arrange(p1, p2, nrow = 2)
+
+
+```
+
+## Identifying changes in concentrations w.r.t wind direction
+
+```{r fig.height=9}
+
+
+df.batch.1 <- df.new[df.new$dow == "Saturday",]
+df.batch.2 <- df.new[df.new$dow == "Sunday",]
+df.batch.1 <-rbind(df.batch.1,df.batch.2)
+df.batch.1<- df.batch.1[df.batch.1$hour>=15,]
+df.batch.1<- df.batch.1[df.batch.1$hour<=23,]
+df.batch.1$min.hour<- df.batch.1$minute/60
+
+p1 <- ggplot(df.batch.1, aes(x = min.hour, y = conc)) + geom_line() + xlab("Time") + ylab("Concentration") +facet_grid(dow~wos)
+
+p2 <- ggplot(df.batch.1, aes(x = min.hour, y = wspeed)) + geom_line() + xlab("Time") + ylab("Wind Speed") +facet_grid(dow~wos)
+
+plot_grid(p1, p2, align = "v",nrow = 2, rel_heights = c(0.5, 0.5))
+
+
+```
+
+```{r fig.height=9,warning=FALSE}
+df.batch.1 <- df.new[df.new$dow == "Saturday",]
+
+df.batch.w1 <- df.batch.1[df.batch.1$wos == 1, ]
+pop_sd <- sd(df.batch.w1$wspeed)*sqrt((length(df.batch.w1$wspeed)-1)/(length(df.batch.w1$wspeed)))
+pop_mean <- mean(df.batch.w1$wspeed)
+df.batch.w1$z <- (df.batch.w1$wspeed - pop_mean) / pop_sd
+
+
+df.batch.w2 <- df.batch.1[df.batch.1$wos == 2, ]
+pop_sd <- sd(df.batch.w2$wspeed)*sqrt((length(df.batch.w2$wspeed)-1)/(length(df.batch.w2$wspeed)))
+pop_mean <- mean(df.batch.w2$wspeed)
+df.batch.w2$z <- (df.batch.w2$wspeed - pop_mean) / pop_sd
+
+df.highz.w1 <- df.batch.w1
+df.highz.w2 <- df.batch.w2
+
+df.highz.w1$min.hour<- df.highz.w1$minute/60
+df.highz.w2$min.hour<- df.highz.w2$minute/60
+
+del.avg <- array(0, nrow(df.highz.w1))
+# for (i in 1:nrow(df.highz.w1)){
+#   del.avg[i] = df.batch.w1$conc[idx] - df.batch.w1$conc[idx - 1]
+# }
+
+df.highz.w1$vic <- del.avg#/df.highz.w1$conc
+
+del.avg <- array(0, nrow(df.highz.w2))
+# for (i in 1:nrow(df.highz.w2)){
+#   idx = which((df.highz.w2$minute[i] == df.batch.w2$minute) == TRUE)
+#   del.avg[i] = df.batch.w2$conc[idx] - df.batch.w2$conc[idx - 1]
+# }
+
+df.highz.w2$vic <- del.avg#/df.highz.w2$conc
+
+p1.1<- ggplot(df.highz.w1, aes(x = min.hour, y = conc)) + geom_line() + ylab("Concentration") + 
+  ggtitle(paste(as.character(weekdays(as.POSIXct(rownames(df.highz.w1)))[1]), as.character(date(rownames(df.highz.w1))[1]),"- week 1")) + ylim(0, 3) + xlab("")
+
+p1.2 <- ggplot(df.highz.w2, aes(x = min.hour, y = conc)) + geom_line() + ylab("") + ylim(0, 3) + ggtitle(paste(as.character(weekdays(as.POSIXct(rownames(df.highz.w2)))[1]), as.character(date(rownames(df.highz.w2))[1]),"- week 2")) + xlab("")
+
+p2.1 <- ggplot(df.highz.w1, aes(x = min.hour, y = z)) + geom_line() + ylab("Z score of Wind speed") + ylim(-2, 6) + xlab("")
+p2.2 <- ggplot(df.highz.w2, aes(x = min.hour, y = z)) + geom_line() + ylab("") + ylim(-2, 6) + xlab("")
+
+p3.1 <- ggplot(df.highz.w1, aes(x = min.hour, y = wdir)) + geom_line() + xlab("Time (hours)") + ylab("Wind Direction") + ylim(0, 300)
+p3.2 <- ggplot(df.highz.w2, aes(x = min.hour, y = wdir)) + geom_line() + xlab("Time (hours)") + ylab("") + ylim(0, 300)
+
+p4.1 <- ggplot(df.highz.w1, aes(x = z, y = conc)) + geom_point(aes(fill = wdir, size = wspeed), pch = 21) + xlab("Z-Score") + ylab("Concentration")
+
+p4.2 <- ggplot(df.highz.w2, aes(x = z, y = conc)) + geom_point(aes(fill = wdir, size = wspeed), pch = 21) + xlab("Z - Score") + ylab("")
+
+plot_grid(p1.1, p1.2,p2.1,p2.2, p3.1, p3.2, p4.1, p4.2, align = "v", nrow = 4, rel_heights = c(0.22,0.22,0.22,0.34))
+```
+
+```{r fig.height=9,warning=FALSE }
+df.batch.1 <- df.new[df.new$dow == "Sunday",]
+
+df.batch.w1 <- df.batch.1[df.batch.1$wos == 1, ]
+pop_sd <- sd(df.batch.w1$wspeed)*sqrt((length(df.batch.w1$wspeed)-1)/(length(df.batch.w1$wspeed)))
+pop_mean <- mean(df.batch.w1$wspeed)
+df.batch.w1$z <- (df.batch.w1$wspeed - pop_mean) / pop_sd
+
+
+df.batch.w2 <- df.batch.1[df.batch.1$wos == 2, ]
+pop_sd <- sd(df.batch.w2$wspeed)*sqrt((length(df.batch.w2$wspeed)-1)/(length(df.batch.w2$wspeed)))
+pop_mean <- mean(df.batch.w2$wspeed)
+df.batch.w2$z <- (df.batch.w2$wspeed - pop_mean) / pop_sd
+
+df.highz.w1 <- df.batch.w1
+df.highz.w2 <- df.batch.w2
+
+df.highz.w1$min.hour<- df.highz.w1$minute/60
+df.highz.w2$min.hour<- df.highz.w2$minute/60
+
+del.avg <- array(0, nrow(df.highz.w1))
+# for (i in 1:nrow(df.highz.w1)){
+#   idx = which((df.highz.w1$minute[i] == df.batch.w1$minute) == TRUE)
+#   del.avg[i] = df.batch.w1$conc[idx] - df.batch.w1$conc[idx - 1]
+# }
+
+df.highz.w1$vic <- del.avg#/df.highz.w1$conc
+
+del.avg <- array(0, nrow(df.highz.w2))
+# for (i in 1:nrow(df.highz.w2)){
+#   idx = which((df.highz.w2$minute[i] == df.batch.w2$minute) == TRUE)
+#   del.avg[i] = df.batch.w2$conc[idx] - df.batch.w2$conc[idx - 1]
+# }
+
+df.highz.w2$vic <- del.avg#/df.highz.w2$conc
+
+p1.1<- ggplot(df.highz.w1, aes(x = min.hour, y = conc)) + geom_line() + ylab("Change in conc.") + 
+  ggtitle(paste(as.character(weekdays(as.POSIXct(rownames(df.highz.w1)))[1]), as.character(date(rownames(df.highz.w1))[1]),"- week 1")) + ylim(0, 3) + xlab("")
+
+p1.2 <- ggplot(df.highz.w2, aes(x = min.hour, y = conc)) + geom_line() + ylab("") + ylim(0, 3) + ggtitle(paste(as.character(weekdays(as.POSIXct(rownames(df.highz.w2)))[1]), as.character(date(rownames(df.highz.w2))[1]),"- week 2")) + xlab("")
+
+p2.1 <- ggplot(df.highz.w1, aes(x = min.hour, y = z)) + geom_line() + ylab("Z score of Wind speed") + ylim(-2, 6) + xlab("")
+p2.2 <- ggplot(df.highz.w2, aes(x = min.hour, y = z)) + geom_line() + ylab("") + ylim(-2, 6) + xlab("")
+
+p3.1 <- ggplot(df.highz.w1, aes(x = min.hour, y = wdir)) + geom_line() + xlab("Time (hours)") + ylab("Wind Direction") + ylim(0, 300)
+p3.2 <- ggplot(df.highz.w2, aes(x = min.hour, y = wdir)) + geom_line() + xlab("Time (hours)") + ylab("") + ylim(0, 300)
+
+
+p4.1 <- ggplot(df.highz.w1, aes(x = z, y = conc)) + geom_point(aes(fill = wdir, size = wspeed), pch = 21) + xlab("Z-Score") + ylab("Concentration") + scale_color_gradient(low="blue", high="red")
+
+p4.2 <- ggplot(df.highz.w2, aes(x = z, y = conc)) + geom_point(aes(fill = wdir, size = wspeed), pch = 21) + xlab("Z - Score") + ylab("") + scale_color_gradient(low="blue", high="red")
+
+plot_grid(p1.1, p1.2,p2.1,p2.2, p3.1, p3.2, p4.1, p4.2, align = "v", nrow = 4, rel_heights = c(0.22,0.22,0.22,0.34)) 
+
+```
+
+### Procedure
+
+- Compute Z-score of the wind speed for one day 
+\[ Z_i = \frac{v_i - \bar{v}}{\sigma(v)}\]
+where, $v$ is the wind-speed at instant $i$.
+- For all Z-scores above 1, compute the change in concentration from the previous instant.
+- Plot
+
+### Correlation with wind direction
+
+```{r}
+ggplot(df.new, aes(x = wdir, y = conc)) + geom_point(aes(color = wspeed)) + facet_wrap(dow~.) + xlab("Wind Direction") + ylab("Concentrations") + labs(color = "Wind Speed") + scale_color_gradient(low="blue", high="red")
+```
+
+```{r}
+ggplot(df.new, aes(x = wdir, y = conc)) + geom_point(aes(color = wspeed)) + xlab("Wind Direction") + ylab("Concentrations") + labs(color = "Wind Speed") + scale_color_gradient(low="blue", high="red")
+```
+
+![Effect of Wind Speed from CALINE4](B:\Work\Robert Bosch Center\Software\CALINE4\Experiment Images\E8_multiRec_4_windSpeed.png)
+
+### Comparing the effect of wind speed and direction
+
+```{r}
+
+
+unique.x.norm <- unique(df.new$wdir)
+cond.mean.y <- c()
+cond.quant_l.y <- c()
+cond.quant_h.y <- c()
+
+cond.mean.ws <- c()
+cond.quant_l.ws <- c()
+cond.quant_h.ws <- c()
+
+for(i in 1:length(unique.x.norm)){
+  cond.mean.y <- c(cond.mean.y, mean(df.new[df.new$wdir == unique.x.norm[i],]$conc))
+  cond.quant_l.y <- c(cond.quant_l.y, quantile(df.new[df.new$wdir == unique.x.norm[i],]$conc, 0.05))
+  cond.quant_h.y <- c(cond.quant_h.y, quantile(df.new[df.new$wdir == unique.x.norm[i],]$conc, 0.95))
+  
+  cond.mean.ws <- c(cond.mean.ws, mean(df.new[df.new$wdir == unique.x.norm[i],]$wspeed))
+  cond.quant_l.ws <- c(cond.quant_l.ws, quantile(df.new[df.new$wdir == unique.x.norm[i],]$wspeed, 0.05))
+  cond.quant_h.ws <- c(cond.quant_h.ws, quantile(df.new[df.new$wdir == unique.x.norm[i],]$wspeed, 0.95))
+}
+
+df.c <- data.frame(uni.x = rep(unique.x.norm, 3), val = c(cond.mean.y, cond.quant_h.y, cond.quant_l.y), type = c(rep("Mean", length(unique.x.norm)), rep("95% Quantile", length(unique.x.norm)),rep("5% Quantile", length(unique.x.norm))))# class = "conc")
+
+df.ws <- data.frame(uni.x = rep(unique.x.norm, 3), val = c(cond.mean.ws, cond.quant_h.ws, cond.quant_l.ws), type = c(rep("Mean", length(unique.x.norm)), rep("95% Quantile", length(unique.x.norm)),rep("5% Quantile", length(unique.x.norm))))#, class = "ws")
+
+df <- rbind(df.c, df.ws)
+
+p1 <- ggplot(df.c, aes(x = uni.x, y = val, color = type)) + geom_line() + ylim(min(range(df.c$val)[1], 0),max(df.c$val)) + labs(color = "Legend")+ xlab("Wind Direction") + ylab("Average Concentration") + geom_point()
+p2 <- ggplot(df.ws, aes(x = uni.x, y = val, color = type)) + geom_line() + ylim(min(range(df.ws$val)[1], 0),max(df.ws$val)) + labs(color = "Legend")+ xlab("Wind Direction") + ylab("Average Wind Speed") + geom_point()
+
+plot_grid(p1, p2, align = "v", nrow = 2, rel_heights = c(0.5, 0.5)) 
+
+
+```
+
+# De-seasoning
+
+```{r}
+avg_time = 1/12
+sample.wd <- W_xts.d
+sample.c <- C_xts
+sample.ws <- W_xts.s
+
+df.new <- get_ts_master_dataFrame(sample.wd, sample.c, sample.ws, avg_time)
+
+df.seasonal <- getSeasonality(df.new, avg_time)
+
+ggplot(df.seasonal, aes(x = (1:(24/avg_time)/2), y = wspeed)) + geom_line()
+
+df.new$sea <- rep(df.seasonal$conc, nrow(df.new)/(24/avg_time))
+
+df.new$desea <- df.new$conc - df.new$sea
+
+df.new <- df.new[complete.cases(df.new), ]
+ggplot(df.new, aes(x = wspeed, y = desea)) + facet_wrap(.~wdir) + geom_line()
+
+```
+
+
+# Tagging of Time series data
+
+## With Original data
+```{r}
+
+avg_time = 0.25
+sample.wd <- W_xts.d
+sample.c <- C_xts
+sample.ws <- W_xts.s
+
+df.new <- get_ts_master_dataFrame(sample.wd, sample.c, sample.ws, avg_time)
+
+df.new.1 <- df.new
+df.new.1$min.hour <- df.new.1$minute/60
+p1 <- list()
+p2 <- list()
+ i = 1
+for(doi in c("Sunday","Monday", "Tuesday", "Saturday")){
+  p1<- ggplot(df.new.1[df.new.1$dow == doi,], aes(x = min.hour, y = conc)) + geom_line(size = 1.5) + theme_grey(base_size = 14) + xlab("") + ylab("Concentrations") + ggtitle(paste(as.character(weekdays(as.POSIXct(rownames(df.new.1[df.new.1$dow == doi,])))[1]), as.character(date(rownames(df.new.1[df.new.1$dow == doi,]))[1]),"- week 1")) + ylim(0, max(df.new.1$conc))  
+  
+  p2 <- ggplot(df.new.1[df.new.1$dow == doi,], aes(x = min.hour, y = wspeed)) + geom_line(size = 1.5) + theme_grey(base_size = 14) +  ylab("Wind Speed") + xlab("Time of day")+ ylim(0, max(df.new.1$wspeed))
+  
+  # p3 <- ggplot(df.new.1[df.new.1$dow == doi,], aes(x = min.hour, y = wdir)) + geom_line(size = 1) + theme_grey(base_size = 14) +  ylab("Wind Direction") + xlab("Time of day") + ylim(0, max(df.new.1$wspeed))
+  plot <- plot_grid(p1, p2, ncol = 1)
+  save_plot(plot, base_height = 5, base_width = 6, filename = paste("tag_",doi,".png", sep ""))
+  
+}
+```
+
+```{r}
+
+```
+
+
+## With deseasonaed data
+```{r}
+
+df.new <- get_ts_master_dataFrame(sample.wd, sample.c, sample.ws, avg_time)
+
+df.seasonal <- getSeasonality(df.new, avg_time)
+
+# ggplot(df.seasonal, aes(x = (1:(24/avg_time)/2), y = wspeed)) + geom_line()
+
+df.new$sea <- rep(df.seasonal$conc, nrow(df.new)/(24/avg_time))
+
+df.new$desea <- df.new$conc - df.new$sea
+
+df.new <- df.new[complete.cases(df.new), ]
+
+df.new.1 <- df.new
+df.new.1$min.hour <- df.new.1$minute/60
+
+for(doi in c("Sunday","Monday", "Tuesday", "Saturday")){
+  
+  p1 <- ggplot(df.new.1[df.new.1$dow == doi,], aes(x = min.hour, y = desea)) + geom_line(size = 1.5) + theme_grey(base_size = 14) + xlab("") + ylab("Desea-Concentrations") + ggtitle(paste(as.character(weekdays(as.POSIXct(rownames(df.new.1[df.new.1$dow == doi,])))[1]), as.character(date(rownames(df.new.1[df.new.1$dow == doi,]))[1]),"- week 1")) + ylim(min(df.new.1$desea), max(df.new.1$desea))
+  
+  p2 <- ggplot(df.new.1[df.new.1$dow == doi,], aes(x = min.hour, y = wspeed)) + geom_line(size = 1.5) + theme_grey(base_size = 14) +  ylab("Wind Speed") + xlab("Time of day")+ ylim(0, max(df.new.1$wspeed))
+  # 
+  # p3 <- ggplot(df.new.1[df.new.1$dow == doi,], aes(x = min.hour, y = wdir)) + geom_line(size = 1) + theme_grey(base_size = 14) +  ylab("Wind Direction") + xlab("Time of day")# + ylim(0, max(df.new.1$wspeed))
+  # plot_grid(p1, p2, p3 , nrow = 3) 
+  plot <- plot_grid(p1, p2, ncol = 1)
+  save_plot(plot, base_height = 5, base_width = 8, filename = paste("tag_",doi,"_dea.png", sep = ""))
+  
+}
+
+
+```
+

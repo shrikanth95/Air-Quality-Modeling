@@ -1,0 +1,625 @@
+# Functions used to recreate all the plots.
+
+library(ggplot2)
+library(reshape2)
+library(corrplot)
+library(plotrix)
+# source("TSA_source.R")
+
+
+## Plots the overall time series data
+# Inputs: 
+#   - xts.ts: time series object
+#   - type: type of variable (eg. "CO Concentrations", "wind speed", )
+#   - folder: name of folder for the plots to be saved in.
+
+plot.TS_Overall <- function(xts.ts, type, title="Overall time series", folder = "plots", formats=c("PDF", "PNG"))
+{	
+  
+  data <- data.frame(t=time(xts.ts), conc=coredata(xts.ts))
+  plt <- ggplot(data=data, aes(x=t, y = conc))
+  plt <- plt + geom_line(colour="steelblue")
+  if(title=="Overall time series"){
+    plt <- plt + ggtitle(paste(title, "of ", type, sep=""))
+  }
+  else{
+    plt <- plt + ggtitle(title)
+  }
+  
+  plt <- plt + xlab("Time") 
+  plt <- plt + ylab(type)
+  
+  # create folder
+  plot.folder <- paste(folder,"/TS_Overall/",sep="")
+  dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
+  
+  # record plot
+  #	print(data)
+  for(format in formats){
+    plot.filename <- paste(plot.folder,"type=",type,".",format,sep="")
+    if(!is.na(format)){
+      if(format=="PDF")
+        pdf(file=plot.filename,bg="white")
+      else if(format=="PNG")
+        png(filename=plot.filename,width=800,height=800,units="px",pointsize=20,bg="white")
+    }
+    
+    print(plt) #suppressMessages(print(plt))
+    
+    if(!is.na(format))
+      dev.off()
+  }
+  print(plt)
+}
+
+# Plot Dataframe with fautly rows in red
+# Inputs: 
+#   - df.new: master data frame with concentrations, windspeed and wind directions
+#   - df.specs: name of data set (char)
+#   - folder: name of folder for the plots to be saved in.
+
+plot.DF_faults<-function(df.new, df.specs, avg_time, folder = "plots",formats=c("PDF", "PNG")){
+  
+  df.new.fault <- df.new[rowSums(is.na(df.new[,c(1,2,3)]))>0,]
+  refTime <- as.POSIXct(df.new$time)
+  
+  fault <- df.new.fault$conc
+  fault.time <- as.POSIXct(df.new.fault$time)
+  Faults <- xts(fault, order.by = fault.time)
+  Overall <- xts(df.new$conc, order.by = refTime)
+  comparison<- merge(Overall, Faults, join = "left")
+  df.comp <- data.frame(x = time(comparison), real.data <- coredata(comparison))
+  df.m <- melt(df.comp, id.vars = "x")
+  
+  
+  plt <- ggplot(df.m, aes(x = x,y = value, color = variable)) + 
+    geom_line() + 
+    scale_colour_manual(values=c(Overall = "black", Faults = "red")) + 
+    labs(color = "Legend") +  
+    ylab("Concentration") + 
+    xlab("Time")+
+    theme_grey(base_size = 15)
+  
+  plot.folder <- paste(folder,"/DF_faults/",sep="")
+  dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
+  
+  # record plot
+  #	print(data)
+  for(format in formats){
+    plot.filename <- paste(plot.folder,"dfName=",df.specs,".",format,sep="")
+    if(!is.na(format)){
+      if(format=="PDF")
+        pdf(file=plot.filename,bg="white")
+      else if(format=="PNG")
+        png(filename=plot.filename,width=800,height=800,units="px",pointsize=20,bg="white")
+    }
+    
+    print(plt) #suppressMessages(print(plt))
+    
+    if(!is.na(format))
+      dev.off()
+  }
+  print(plt)
+}
+
+# Plots the daily seasonality w.r.t wind speed and wind direction
+# - Input
+#     - df.seasonal: data frame with the seasonal values
+#   - df.specs: name of data set (char)
+#   - folder: name of folder for the plots to be saved in.
+
+plot.DF_Seasonal_c_ws<-function(df.seasonal, df.specs, avg_time, folder = "plots",formats=c("PDF", "PNG")){
+  
+  p1 <- ggplot(df.seasonal, aes(x = x, y = conc)) + geom_line(size = 1.5) + ylab("Concentration") + theme_grey(base_size = 12)+ scale_x_datetime(date_labels = "%H:%M") + theme_grey(base_size = 15) + xlab("Time of day") + ggtitle("Seasonality of Concentrations")
+  p2 <- ggplot(df.seasonal, aes(x = x, y = wspeed)) + geom_line(size = 1.5) + ylab("Wind Speed (m/s)") + xlab("Time of day") + theme_grey(base_size = 15) + scale_x_datetime(date_labels = "%H:%M") + ggtitle("Seasonality of Wind Speeds")
+  
+  plt<- plot_grid(p1, p2, nrow=2)  
+  plot.folder <- paste(folder,"/DF_Seasonal_c_ws/",sep="")
+  dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
+  
+  # record plot
+  #	print(data)
+  for(format in formats){
+    plot.filename <- paste(plot.folder,"dfName=",df.specs,".",format,sep="")
+    if(!is.na(format)){
+      if(format=="PDF")
+        pdf(file=plot.filename,bg="white")
+      else if(format=="PNG")
+        png(filename=plot.filename,width=800,height=800,units="px",pointsize=20,bg="white")
+    }
+    
+    print(plt) #suppressMessages(print(plt))
+    
+    if(!is.na(format))
+      dev.off()
+  }
+  print(plt)
+}
+
+# Plots the correlatins of wind speed and concentrations and the Z score of the concentrations
+# - Input
+#   - df.seasonal: data frame with the seasonal values
+#   - df.specs: name of data set (char)
+#   - folder: name of folder for the plots to be saved in.
+
+
+plot.Corr_ws_c<-function(df.seasonal, df.specs, avg_time, folder = "plots",formats=c("PDF", "PNG")){
+  
+  
+  df.seasonal$z.conc <- computeZscore(df.seasonal$conc)
+  p1 <- ggplot(df.seasonal, aes(x = wspeed, y = conc)) + 
+    geom_point(size = 2) + 
+    xlab("Wind Speed") + ylab("Concentration") + ggtitle("Concentrations vs Wind Speeds over all days") +
+    scale_color_gradient(low="red", high="blue") + theme_grey(base_size = 14) + labs(color = "Wind Directions") #+ theme(legend.position="none")
+  p2 <- ggplot(df.seasonal, aes(x = wspeed, y = z.conc)) + 
+    geom_point(size = 2) + 
+    xlab("Wind Speed") + ylab("Z score of Concentration") +
+    scale_color_gradient(low="red", high="blue") + theme_grey(base_size = 14)
+  
+  plt<- plot_grid(p1, p2, nrow = 2)
+  plot.folder <- paste(folder,"/Corr_ws_c/",sep="")
+  dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
+  
+  # record plot
+  #	print(data)
+  for(format in formats){
+    plot.filename <- paste(plot.folder,"dfName=",df.specs,".",format,sep="")
+    if(!is.na(format)){
+      if(format=="PDF")
+        pdf(file=plot.filename,bg="white")
+      else if(format=="PNG")
+        png(filename=plot.filename,width=800,height=800,units="px",pointsize=20,bg="white")
+    }
+    
+    print(plt) #suppressMessages(print(plt))
+    
+    if(!is.na(format))
+      dev.off()
+  }
+  print(plt)
+}
+
+# Plots the correlations of wind speed on de-seasoned data
+# - Input
+#   - df.new: Master data frame
+#   - df.seasonal: data frame with the seasonal values
+#   - df.specs: name of data set (char)
+#   - folder: name of folder for the plots to be saved in.
+
+
+plot.Scat_ws_deseasoned<-function(df.new, df.seasonal, df.specs, avg_time, folder = "plots", formats = c("PDF", "PNG")){
+  
+  df.new$sea <- rep(df.seasonal$conc, nrow(df.new)/(24/avg_time))
+  
+  df.new$desea <- df.new$conc - df.new$sea
+  
+  # df.clean <- df.new[complete.cases(df.new), ]
+  plt<-  ggplot(df.new, aes(x = wspeed, y = desea, color = wdir)) + 
+    geom_point(size = 2) + 
+    xlab("Wind Speed") + ylab("De-seasoned concentration") + ggtitle("Concentrations vs Wind Speeds over all days") +
+    scale_color_gradient(low="red", high="blue") + theme_grey(base_size = 14) + labs(color = "Wind Directions") #+ 
+  
+  plot.folder <- paste(folder,"/Scat_ws_deseasoned/",sep="")
+  dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
+  
+  # record plot
+  #	print(data)
+  for(format in formats){
+    plot.filename <- paste(plot.folder,"dfName=",df.specs,".",format,sep="")
+    if(!is.na(format)){
+      if(format=="PDF")
+        pdf(file=plot.filename,bg="white")
+      else if(format=="PNG")
+        png(filename=plot.filename,width=800,height=800,units="px",pointsize=20,bg="white")
+    }
+    
+    print(plt) #suppressMessages(print(plt))
+    
+    if(!is.na(format))
+      dev.off()
+  }  
+  print(plt)
+}
+
+# Plots the histogram plots of concentrations and wind direction
+# - Input
+#   - df.new: Master data frame
+#   - df.specs: name of data set (char)
+#   - folder: name of folder for the plots to be saved in.
+
+
+plot.Hist_conc_wd<-function(df.new, df.specs, avg_time, folder = "plots", formats = c("PDF", "PNG")){
+  
+  plt<-ggplot(df.new, aes(x = wdir, y = conc)) + geom_point(aes(color = wspeed)) + xlab("Wind Direction") + ylab("Concentrations") + labs(color = "Wind Speed") + scale_color_gradient(low="blue", high="red") + theme_grey(base_size = 14) + ggtitle("Concentration vs Wind Direction")
+  
+  plot.folder <- paste(folder,"/Hist_conc_wd/",sep="")
+  dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
+  
+  for(format in formats){
+    plot.filename <- paste(plot.folder,"dfName=",df.specs,".",format,sep="")
+    if(!is.na(format)){
+      if(format=="PDF")
+        pdf(file=plot.filename,bg="white")
+      else if(format=="PNG")
+        png(filename=plot.filename,width=800,height=800,units="px",pointsize=20,bg="white")
+    }
+    
+    print(plt) #suppressMessages(print(plt))
+    
+    if(!is.na(format))
+      dev.off()
+  }  
+  print(plt)
+}
+
+## COncentrations and wind speed according to wind direciton
+#- Input: 
+#   - df.new: Master data frame
+#   - df.specs: name of data set (char)
+#   - folder: name of folder for the plots to be saved in.
+
+plot.conc_ws_on_wd<-function(df.new, df.specs,avg_time, folder = "plots", formats = c("PDF", "PNG")){
+  
+  df.new.clean <- df.new[complete.cases(df.new), ]
+  
+  unique.x.norm <- unique(df.new.clean$wdir)
+  cond.mean.y <- c()
+  cond.quant_l.y <- c()
+  cond.quant_h.y <- c()
+  
+  cond.mean.ws <- c()
+  cond.quant_l.ws <- c()
+  cond.quant_h.ws <- c()
+  
+  for(i in 1:length(unique.x.norm)){
+    cond.mean.y <- c(cond.mean.y, mean(df.new.clean[df.new.clean$wdir == unique.x.norm[i],]$conc))
+    cond.quant_l.y <- c(cond.quant_l.y, quantile(df.new.clean[df.new.clean$wdir == unique.x.norm[i],]$conc, 0.05))
+    cond.quant_h.y <- c(cond.quant_h.y, quantile(df.new.clean[df.new.clean$wdir == unique.x.norm[i],]$conc, 0.95))
+    
+    cond.mean.ws <- c(cond.mean.ws, mean(df.new.clean[df.new.clean$wdir == unique.x.norm[i],]$wspeed))
+    cond.quant_l.ws <- c(cond.quant_l.ws, quantile(df.new.clean[df.new.clean$wdir == unique.x.norm[i],]$wspeed, 0.05))
+    cond.quant_h.ws <- c(cond.quant_h.ws, quantile(df.new.clean[df.new.clean$wdir == unique.x.norm[i],]$wspeed, 0.95))
+  }
+  
+  df.c <- data.frame(uni.x = rep(unique.x.norm, 3), val = c(cond.mean.y, cond.quant_h.y, cond.quant_l.y), type = c(rep("Mean", length(unique.x.norm)), rep("95% Quantile", length(unique.x.norm)),rep("5% Quantile", length(unique.x.norm))))# class = "conc")
+  
+  df.ws <- data.frame(uni.x = rep(unique.x.norm, 3), val = c(cond.mean.ws, cond.quant_h.ws, cond.quant_l.ws), type = c(rep("Mean", length(unique.x.norm)), rep("95% Quantile", length(unique.x.norm)),rep("5% Quantile", length(unique.x.norm))))#, class = "ws")
+  
+  df <- rbind(df.c, df.ws)
+  
+  p1.2 <- ggplot(df.c, aes(x = uni.x, y = val, color = type)) + geom_line(size = 2) + ylim(min(range(df.c$val)[1], 0),max(df.c$val)) + labs(color = "Legend")+ xlab("Wind Direction") + ylab("Average Concentration") + geom_point(size = 3) + theme_grey(base_size = 14) + ggtitle("Concentration vs Wind Direction")
+  p2.2 <- ggplot(df.ws, aes(x = uni.x, y = val, color = type)) + geom_line(size  = 2) + ylim(min(range(df.ws$val)[1], 0),max(df.ws$val)) + labs(color = "Legend")+ xlab("Wind Direction") + ylab("Average Wind Speed") + geom_point(size= 3) + theme_grey(base_size = 14)
+  
+  plt <- plot_grid(p1.2, p2.2, align = "v", nrow = 2)
+  
+  plot.folder <- paste(folder,"/conc_ws_on_wd/",sep="")
+  dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
+  
+  for(format in formats){
+    plot.filename <- paste(plot.folder,"dfName=",df.specs,".",format,sep="")
+    if(!is.na(format)){
+      if(format=="PDF")
+        pdf(file=plot.filename,bg="white")
+      else if(format=="PNG")
+        png(filename=plot.filename,width=800,height=800,units="px",pointsize=20,bg="white")
+    }
+    
+    print(plt) #suppressMessages(print(plt))
+    
+    if(!is.na(format))
+      dev.off()
+  }  
+  print(plt)
+}
+
+# Plots the deseasoned concentrtions against the wind speed with each subplot corresponding to a wind direction
+# - Input
+#   - df.seasonal: data frame with the seasonal averaged data
+#   - df.new: Master data frame
+#   - df.specs: name of data set (char)
+#   - folder: name of folder for the plots to be saved in.
+
+plot.scat_ws_decon<- function(df.new, df.seasonal, df.specs, avg_time, folder = "plots", formats = c("PDF", "PNG")){
+  df.new$sea <- rep(df.seasonal$conc, nrow(df.new)/(24/avg_time))
+  
+  df.new$desea <- df.new$conc - df.new$sea
+  
+  # df.new <- df.new[complete.cases(df.new), ]
+  plt <- ggplot(df.new, aes(x = wspeed, y = desea)) + 
+    facet_wrap(.~wdir) + 
+    geom_point(size  = 1) + 
+    theme_grey(base_size = 14) + 
+    xlab("Wind speed(m/s)") + 
+    ylab("Deseasoned concentrations") + 
+    ggtitle("Deseasoned Concentration vs Wind Speed wraped for each wind direction")
+  
+  plot.folder <- paste(folder,"/scat_ws_decon/",sep="")
+  dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
+  
+  for(format in formats){
+    plot.filename <- paste(plot.folder,"dfName=",df.specs,".",format,sep="")
+    if(!is.na(format)){
+      if(format=="PDF")
+        pdf(file=plot.filename,bg="white")
+      else if(format=="PNG")
+        png(filename=plot.filename,width=800,height=800,units="px",pointsize=20,bg="white")
+    }
+    
+    print(plt) #suppressMessages(print(plt))
+    
+    if(!is.na(format))
+      dev.off()
+  }
+  print(plt)
+}
+
+# Plots two figures
+# - The noise variance and the concentration characteristics for a data frame
+# - The noise variance of concentrations as function of time of day
+# - Input
+#   - df.new: Master data frame
+#   - df.specs: name of data set (char)
+#   - folder: name of folder for the plots to be saved in.
+
+plot.NV_conc_char<-function(df.new, df.seasonal, df.specs, avg_time, folder = "plots", formats = c("PDF", "PNG")){
+  
+  df.new$sea <- rep(df.seasonal$conc, nrow(df.new)/(24/avg_time))
+  
+  df.new$desea <- df.new$conc - df.new$sea
+  # df.new <- df.new[complete.cases(df.new), ]
+  hour.set <- 0:23
+  desea.xts <- xts(df.new$desea, order.by = as.POSIXct(df.new$time))
+  conc.xts <- xts(df.new$conc, order.by = as.POSIXct(df.new$time))
+  
+  desea.split <- split(desea.xts, f = "hours")
+  conc.split <- split(conc.xts, f = "hours")
+  
+  len = length(desea.split)
+  desea.var.1hr <- array(0, len)
+  conc.var.1hr <- array(0, len)
+  conc.1hr <- array(0, len)
+  desea <- array(0, len)
+  time.day <- array(0, len)#.POSIXct(character(len))
+  
+  for(i in 1:length(desea.split)){
+    desea.var.1hr[i] = var(desea.split[[i]])
+    conc.var.1hr[i] = var(conc.split[[i]])
+    desea[i] = mean(desea.split[[i]])
+    conc.1hr[i] = mean(conc.split[[i]])
+    time.day[i] <- hour(start(conc.split[[i]]))
+  }
+  df.var.1 <- data.frame(time = time.day, conc = conc.1hr, de.var = desea.var.1hr, conc.var = conc.var.1hr)
+  
+  df.var.2 <- data.frame(time = time.day, desea = desea, de.var = desea.var.1hr, conc.var = conc.var.1hr)
+  
+  p.char1 <- ggplot(df.var.2, aes(x=desea,y=de.var)) + 
+    geom_point(size = 1.5) +  xlim(-1, 1.5) + ylab(expression(paste(sigma,'(De-seasoned Concentrations)')))+
+    ylim(0, 1) +  xlab("Deseasoned Concentrations")+ theme_grey(base_size = 13)
+  p.char2 <- ggplot(df.var.1, aes(x=conc,y=conc.var)) + 
+    geom_point(size = 1.5) + 
+    xlab("Concentrations") + ylab(expression(paste(sigma,'(Concentrations)')))+
+    ylim(0, 0.5)+ xlim(0.5, 1.5) +   theme_grey(base_size = 13) # + stat_smooth(method = "loess")
+  # p4 <- ggplot(df.var.2, aes(x=desea,y=conc.var)) + 
+  #   geom_point(size = 1.5) + 
+  #   ylab("") + ylim(0, 1) + theme_grey(base_size = 13)#+ stat_smooth(method = "loess")
+  
+  p<- plot_grid(p.char1, p.char2, nrow = 1)
+  title <- ggdraw() + draw_label("Noise Variance and Concentration Characteristics")
+  
+  plt<- plot_grid(title, p, ncol=1, rel_heights=c(0.1, 1)) # rel_heights values control title margins
+  
+  
+  plot.folder <- paste(folder,"/NV_conc_char/", sep="")
+  dir.create(plot.folder, showWarnings=FALSE, recursive=TRUE)
+  
+  for(format in formats){
+    plot.filename <- paste(plot.folder,"dfName=",df.specs,".",format,sep="")
+    if(!is.na(format)){
+      if(format=="PDF")
+        pdf(file=plot.filename,bg="white")
+      else if(format=="PNG")
+        png(filename=plot.filename,width=800,height=800,units="px",pointsize=20,bg="white")
+    }
+    
+    print(plt) #suppressMessages(print(plt))
+    
+    if(!is.na(format))
+      dev.off()
+  }
+  print(plt)
+  de.conc <- array(0, 24)
+  ql.dc <- array(0,24)
+  qh.dc <- array(0,24)
+  
+  ql.c <- array(0,24)
+  qh.c <- array(0,24)
+  
+  conc <- array(0, 24)
+  hour.set <- 0:23
+  df.var.2 <- df.var.2[complete.cases(df.var.2), ]
+  for(i in hour.set){
+    conc[i+1] <- mean(df.var.2$conc.var[df.var.2$time == i])
+    ql.c[i+1] <- quantile(df.var.2$conc.var[df.var.2$time == i], 0.05)
+    qh.c[i+1] <- quantile(df.var.2$conc.var[df.var.2$time == i], 0.95)
+    
+    de.conc[i+1] <- mean(df.var.2$de.var[df.var.2$time == i])
+    ql.dc[i+1] <- quantile(df.var.2$de.var[df.var.2$time == i], 0.05)
+    qh.dc[i+1] <- quantile(df.var.2$de.var[df.var.2$time == i], 0.95)
+  }
+  tmp.1 <- data.frame(time = 0:23, Conc = conc, de.Conc = de.conc)#, ql.c = ql.c, ql.dc = ql.dc, qh.c = qh.c, qh.dc= qh.dc)
+  tmp <- melt(tmp.1, id = "time")
+  plt <- ggplot(tmp, aes(x = time, y  = value ,color = variable)) + 
+    geom_line(size= 2)+
+    #geom_line(aes(x = time, y = de.conc)) + 
+    ylab("Variance") + xlab("Time of Day (Hours)") + 
+    ggtitle("Variance by Time of Day") + 
+    theme_grey(base_size = 15)
+  # + geom_line(aes(x  =0:23,  y = ql.c, linetype="dotted"), colour = '5th percentile')+geom_line(aes(x  =0:23, y = qh.c, linetype="dotted",colour = '95th percentile') ) + 
+  #geom_line(aes(y = ql.dc, linetype="dotted"), colour = '5th percentile - desea')+geom_line(aes(y = qh.dc, linetype="dotted",colour = '95th percentile - desea') )
+  
+  plot.folder <- paste(folder,"/NV_conc_char_ToD/", sep="")
+  dir.create(plot.folder, showWarnings=FALSE, recursive=TRUE)
+  
+  for(format in formats){
+    plot.filename <- paste(plot.folder,"dfName=",df.specs,".",format,sep="")
+    if(!is.na(format)){
+      if(format=="PDF")
+        pdf(file=plot.filename,bg="white")
+      else if(format=="PNG")
+        png(filename=plot.filename,width=800,height=800,units="px",pointsize=20,bg="white")
+    }
+    
+    print(plt) #suppressMessages(print(plt))
+    
+    if(!is.na(format))
+      dev.off()      
+  }
+  print(plt) 
+}
+
+# Plots the concentration and the variance as a function of wind
+# - Input
+#   - df.new: Master data frame
+#   - df.specs: name of data set (char)
+#   - folder: name of folder for the plots to be saved in.
+
+plot.conc_on_ws<- function(df.new, df.seasonal, df.specs, avg_time, folder = "plots", formats = c("PDF", "PNG")){
+  
+  df.new$sea <- rep(df.seasonal$conc, nrow(df.new)/(24/avg_time))
+  
+  df.new$desea <- df.new$conc - df.new$sea
+  
+  windSpeeds <- seq(0, max(df.new.clean$wspeed), 0.1)
+  
+  batch.m <- array(0, (length(windSpeeds)-1))
+  batch.v <- array(0, (length(windSpeeds)-1))
+  batch.ql <- array(0, (length(windSpeeds)-1))
+  batch.qh <- array(0, (length(windSpeeds)-1))
+  batch.ws <- array(0, (length(windSpeeds)-1))
+  batch.c <- array(0, (length(windSpeeds) - 1))
+  
+  for(i in 1:(length(windSpeeds)-1)){
+    batch.m[i] <- mean(df.new$desea[which(df.new$wspeed>windSpeeds[i] & df.new$wspeed<windSpeeds[i+1])])
+    batch.c[i] <- mean(df.new$conc[which(df.new$wspeed>windSpeeds[i] & df.new$wspeed<windSpeeds[i+1])])
+    
+    batch.ql[i] <- quantile(df.new$desea[which(df.new$wspeed>windSpeeds[i] & df.new$wspeed<windSpeeds[i+1])], 0.05)
+    batch.qh[i] <- quantile(df.new$desea[which(df.new$wspeed>windSpeeds[i] & df.new$wspeed<windSpeeds[i+1])], 0.95)
+    batch.v[i] <- var(df.new$desea[which(df.new$wspeed>windSpeeds[i] & df.new$wspeed<windSpeeds[i+1])])
+    batch.ws[i] <- mean(windSpeeds[c(i, (i+1))])
+  }
+  df.batch <- data.frame(ws = batch.ws, mean = batch.m, var = batch.v, ql = batch.ql, qh = batch.qh, conc = batch.c)
+  
+  df.m <- melt(df.batch, id.vars = "ws")
+  
+  p1 <- ggplot(df.m[df.m$variable!="var",], aes(x = ws, y= value, color = variable)) + geom_line(size = 1)+xlab("")+ylab("Average Conc.")  + theme_grey(base_size = 15) + scale_colour_manual(values =c('mean'='black','ql'='green', "qh" = "red", "conc" = "blue"), labels = c("Avg. De-conc","5% Quantile", "95% Quantile", "Avg. conc")) +labs(color  = "Legend")
+  
+  p2 <- ggplot(df.batch, aes(x = ws, y= batch.v)) + geom_point(size = 2)+xlab("Wind Speed (m/s)")+ylab("Variance") +   theme_grey(base_size = 15)
+  
+  plt <- plot_grid(p1, p2 , nrow = 2)
+  plot.folder <- paste(folder,"/conc_on_ws/", sep="")
+  dir.create(plot.folder, showWarnings=FALSE, recursive=TRUE)
+  
+  for(format in formats){
+    plot.filename <- paste(plot.folder,"dfName=",df.specs,".",format,sep="")
+    if(!is.na(format)){
+      if(format=="PDF")
+        pdf(file=plot.filename,bg="white")
+      else if(format=="PNG")
+        png(filename=plot.filename,width=800,height=800,units="px",pointsize=20,bg="white")
+    }
+    
+    print(plt) #suppressMessages(print(plt))
+    
+    if(!is.na(format))
+      dev.off()      
+  }  
+  
+  print(plt)
+}
+
+# Plots the scatter plot with the Z scores of both the concentrations and the wind speed
+# - Input
+#   - df.new: Master data frame
+#   - df.specs: name of data set (char)
+#   - folder: name of folder for the plots to be saved in.
+
+
+plot.Zconc_Zws<- function(df.new, df.specs, avg_time,folder = "plots", formats = c("PDF", "PNG")){
+  
+  df.new <- df.new[complete.cases(df.new),]
+  df.new$z.conc <- computeZscore(df.new$conc)
+  df.new$z.ws <- computeZscore(df.new$wspeed)
+  
+  plt<- ggplot(df.new[which( df.new$hour > 8 | df.new$hour < 18),], 
+         aes(x = z.ws, y = z.conc)) + 
+    geom_point(size = 1) + 
+    xlab("Z-score(Wind Speed)") + 
+    ylab("Z-score(Concentrations)")  +
+    theme_grey(base_size = 14) + 
+    ggtitle("Z-score(Conc) vs Z-score(Wind speed) from 9AM to 6PM")
+  
+  plot.folder <- paste(folder,"/Zconc_Zws/", sep="")
+  dir.create(plot.folder, showWarnings=FALSE, recursive=TRUE)
+  
+  for(format in formats){
+    plot.filename <- paste(plot.folder,"dfName=",df.specs,".",format,sep="")
+    if(!is.na(format)){
+      if(format=="PDF")
+        pdf(file=plot.filename,bg="white")
+      else if(format=="PNG")
+        png(filename=plot.filename,width=800,height=800,units="px",pointsize=20,bg="white")
+    }
+    
+    print(plt) #suppressMessages(print(plt))
+    
+    if(!is.na(format))
+      dev.off()      
+  }
+  print(plt)
+}
+
+# Plots the deseasoned concentrtions against the wind speed with each subplot corresponding to a wind direction
+# - Input
+#   - df.sea.d: data frame with the daily seasonal averaged data
+#   - df.new: Master data frame
+#   - df.sea.w: data frame with the weekly seasonal averaged data
+#   - df.specs: name of data set (char)
+#   - folder: name of folder for the plots to be saved in.
+  
+plot.scat_ws_wdecon<- function(df.new, df.sea.d,df.sea.w, avg_time, folder = "plots", formats = c("PDF", "PNG")){
+  # ggplot(df.seasonal, aes(x = (1:(24/avg_time)/2), y = wspeed)) + geom_line()
+  
+  df.new$sea.d <- rep(df.sea.d$conc, nrow(df.new)/(24/avg_time))
+  df.new$sea.w <- pad_df_weeklySea(df.new, df.sea.w)
+  
+  
+  df.new$desea.d <- df.new$conc - df.new$sea.d
+  df.new$desea.w <- df.new$conc - df.new$sea.w
+  
+  plt <- ggplot(df.new[complete.cases(df.new), ], aes(x = wspeed, y = desea.w)) + 
+    facet_wrap(.~wdir) + 
+    geom_point(size  = 1) + 
+    theme_grey(base_size = 14) + 
+    xlab("Wind speed(m/s)") + 
+    ylab("Deseasoned concentrations")
+  
+  plot.folder <- paste(folder,"/scat_ws_wdecon/", sep="")
+  dir.create(plot.folder, showWarnings=FALSE, recursive=TRUE)
+  
+  for(format in formats){
+    plot.filename <- paste(plot.folder,"dfName=",df.specs,".",format,sep="")
+    if(!is.na(format)){
+      if(format=="PDF")
+        pdf(file=plot.filename,bg="white")
+      else if(format=="PNG")
+        png(filename=plot.filename,width=800,height=800,units="px",pointsize=20,bg="white")
+    }
+    
+    print(plt) #suppressMessages(print(plt))
+    
+    if(!is.na(format))
+      dev.off()      
+  }
+  print(plt)
+  
+}
