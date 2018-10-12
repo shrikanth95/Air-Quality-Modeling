@@ -22,7 +22,7 @@ library("cowplot")
 theme_set(theme_grey())
 library(reshape2)
 library(scales)
-library(tidyverse)
+library(tidyverse);
 ```
 
 Notes:
@@ -30,7 +30,7 @@ Notes:
 - Two data sets
     - CO data from August used only to work with weekly seasonality.
     - CO, Wind Speed and Wind Direction data from early September
-- Assumpition: The programs are written for a minimum seasonality of 24 hours.
+- Assumption: The programs are written for a minimum seasonality of 24 hours.
 
 ## Varaibles required for running this tutorial
 ```{r}
@@ -94,13 +94,13 @@ downSample <- function(data, avg_time, type = "non-periodic"){
 ```
 
 - Inputs: 
-    - data (a univariate xts object)
+    - data (a uni variate xts object)
     - Averaging time (in hours)
-    - Type of varaiable
-        - Periodic: Like wind directions, the downsampling is done by computing the mode.  
-        - Non-periodic: Like wind speed and concentration, downsampling is done by computing the mean.
+    - Type of variable
+        - Periodic: Like wind directions, the down sampling is done by computing the mode.  
+        - Non-periodic: Like wind speed and concentration, down sampling is done by computing the mean.
 - Output:
-    - An xts object that is downsampled 
+    - An xts object that is down sampled 
 
 ### Usage - Example with 15 min averaging time
 
@@ -342,8 +342,11 @@ Creates a dictionary with correct days classified based on the day of week
 - Outputs: list of two objects
     - Named array of length 7 (representing the day of the week) and the value showing the number of days where is data is present for the corresponding name
     - Named list of length 7 (representing the day of the week) where each item is a numeric array that shows the indexes of the xts object belonging to day
+    
+### Usage
 ```{r}
-
+days_summary <- removeAnomaly(xts.c)
+days_summary
 ```
 
 
@@ -406,7 +409,7 @@ The function is used to compute the weekly seasonal data based on the dictionary
     - CI: Desired confidence interval.  Should not be an array.
 
 - Outputs: List of two items
-    - Matrix of 7 columns (each column represeting a day of the week) with $\frac{24}{\tau}$ number of rows, where $\tau$ is the averaging time
+    - Matrix of 7 columns (each column representing a day of the week) with $\frac{24}{\tau}$ number of rows, where $\tau$ is the averaging time
 
 ## Fetch seasonal data 
 
@@ -457,7 +460,7 @@ getSeasonalData_August <- function(avg_time){
 
 ```
 
-For an averaging time $\tau$, the function computes the 24 hour seasonality over the week from the August dataset and also stores it in a .csv file with title \textit{sea\_CO\_aug\_x.csv} where $x = \tau \times 60$ to avoid recomputation -- similar to a cache.
+For an averaging time $\tau$, the function computes the 24 hour seasonality over the week from the August data set and also stores it in a .csv file with title \textit{sea\_CO\_aug\_x.csv} where $x = \tau \times 60$ to avoid re computation -- similar to a cache.
 
 - Input: Averaging time $\tau$
 - Output: Data frame of length $\frac{ 7 \times 24}{\tau}$
@@ -488,7 +491,7 @@ getMasterdf_Sepetember <- function(avg_time){
 }
 ```
 
-Computes the master data frame from the early Sepetember dataset and stores it in a .csv file \textit{master\_sep\_x.csv} where $x = \tau \times 60$ to avoid recomputation.
+Computes the master data frame from the early September data set and stores it in a .csv file \textit{master\_sep\_x.csv} where $x = \tau \times 60$ to avoid re computation.
 
 - Input: Averaging time $\tau$
 - Output: Data frame
@@ -509,7 +512,7 @@ return(sea.w)
 }
 ```
 
-For a dataset `df.new`, the function returns a column with weekly seasonality for each day of the `df.new` data frame.  For  eg. for a 3 day data-set with `{Sunday, Monday, Tuesday}`, the funciton returns an array `{Seasonal Sunday, Seasonal Monday, Seasonal Tuesday}`
+For a data set `df.new`, the function returns a column with weekly seasonality for each day of the `df.new` data frame.  For  eg. for a 3 day data-set with `{Sunday, Monday, Tuesday}`, the function returns an array `{Seasonal Sunday, Seasonal Monday, Seasonal Tuesday}`
 
 ### Usage
 ```{r, warning = FALSE}
