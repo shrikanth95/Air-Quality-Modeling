@@ -118,7 +118,7 @@ xts.ds.c <- downSample(xts.c, avg_time)
 plot(xts.ds.c)
 ```
 
-## Compute the master dataframe
+## Construct master dataframe
 
 ```{r, echo = TRUE}
 get_ts_master_dataFrame <- function(fn.ts.wdir, fn.ts.conc, fn.ts.ws, avg_time){

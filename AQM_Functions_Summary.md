@@ -97,8 +97,8 @@ plot(xts.ds.c)
 
 ![](AQM_Functions_Summary_files/figure-markdown_github/unnamed-chunk-5-1.png)
 
-Compute the master dataframe
-----------------------------
+Construct master dataframe
+--------------------------
 
 ``` r
 get_ts_master_dataFrame <- function(fn.ts.wdir, fn.ts.conc, fn.ts.ws, avg_time){
