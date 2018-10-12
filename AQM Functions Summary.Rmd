@@ -471,10 +471,10 @@ df.sea.w <- getSeasonalData_August(avg_time)
 head(df.sea.w)
 ```
 
-## Master data frame from Sepetember dataset 
+## Master data frame from September dataset 
 
 ```{r,  echo = TRUE}
-getMasterdf_Sepetember <- function(avg_time){
+getMasterdf_September <- function(avg_time){
   destfile=paste('TSA Cached data/master_sep_',
                  as.character(avg_time*60),'.csv', sep="")
   

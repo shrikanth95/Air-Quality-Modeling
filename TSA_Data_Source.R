@@ -143,12 +143,12 @@ getSeasonalData_August <- function(avg_time){
   
 }
 
-# Computes the master data frame from the early Sepetember dataset and stores it in a .csv file \textit{master\_sep\_x.csv} where $x = \tau \times 60$ to avoid recomputation.
+# Computes the master data frame from the early September dataset and stores it in a .csv file \textit{master\_sep\_x.csv} where $x = \tau \times 60$ to avoid recomputation.
 # 
 # - Input: Averaging time $\tau$
 # - Output: Data frame
 
-getMasterdf_Sepetember <- function(avg_time){
+getMasterdf_September <- function(avg_time){
   destfile=paste('TSA Cached data/master_sep_',
                  as.character(avg_time*60),'.csv', sep="")
   if (file.exists(destfile)) {

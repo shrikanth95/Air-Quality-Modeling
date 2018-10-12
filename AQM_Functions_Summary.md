@@ -8,7 +8,7 @@ Notes:
 -   Two data sets
     -   CO data from August used only to work with weekly seasonality.
     -   CO, Wind Speed and Wind Direction data from early September
--   Assumpition: The programs are written for a minimum seasonality of 24 hours.
+-   Assumption: The programs are written for a minimum seasonality of 24 hours.
 
 Varaibles required for running this tutorial
 --------------------------------------------
@@ -69,13 +69,13 @@ downSample <- function(data, avg_time, type = "non-periodic"){
 ```
 
 -   Inputs:
-    -   data (a univariate xts object)
+    -   data (a uni variate xts object)
     -   Averaging time (in hours)
-    -   Type of varaiable
-        -   Periodic: Like wind directions, the downsampling is done by computing the mode.
-        -   Non-periodic: Like wind speed and concentration, downsampling is done by computing the mean.
+    -   Type of variable
+        -   Periodic: Like wind directions, the down sampling is done by computing the mode.
+        -   Non-periodic: Like wind speed and concentration, down sampling is done by computing the mean.
 -   Output:
-    -   An xts object that is downsampled
+    -   An xts object that is down sampled
 
 ### Usage - Example with 15 min averaging time
 
@@ -234,6 +234,8 @@ getSeasonality <- function(df.new, avg_time){
 -   Inputs: Master Data frame, averaging time *τ*
 -   Output: Data frame with $\\frac{24}{\\tau}$ rows, where *τ* is the averaging time.
 
+usage
+
 Compute and return Z score of an array
 --------------------------------------
 
@@ -328,6 +330,39 @@ Creates a dictionary with correct days classified based on the day of week
     -   Named array of length 7 (representing the day of the week) and the value showing the number of days where is data is present for the corresponding name
     -   Named list of length 7 (representing the day of the week) where each item is a numeric array that shows the indexes of the xts object belonging to day
 
+### Usage
+
+``` r
+days_summary <- removeAnomaly(xts.c)
+days_summary
+```
+
+    ## [[1]]
+    ##    Sunday    Monday   Tuesday Wednesday  Thursday    Friday  Saturday 
+    ##         2         2         1         1         1         1         1 
+    ## 
+    ## [[2]]
+    ## [[2]]$Sunday
+    ## [1] 2 9
+    ## 
+    ## [[2]]$Monday
+    ## [1]  3 10
+    ## 
+    ## [[2]]$Tuesday
+    ## [1] 4
+    ## 
+    ## [[2]]$Wednesday
+    ## [1] 5
+    ## 
+    ## [[2]]$Thursday
+    ## [1] 6
+    ## 
+    ## [[2]]$Friday
+    ## [1] 7
+    ## 
+    ## [[2]]$Saturday
+    ## [1] 1
+
 Get daily average based on dictionary
 -------------------------------------
 
@@ -385,9 +420,9 @@ The function is used to compute the weekly seasonal data based on the dictionary
     -   Day\_dict: Named list of length 7 (representing the day of the week) where each item is a numeric array that shows the indexes of the xts object belonging to day. Also the output of the removeAnomaly function.
     -   Avg\_time: Averaging time in Hours
     -   Number of weeks of interest
-    -   CI: Desired confidence interval. Sould not be an array.
+    -   CI: Desired confidence interval. Should not be an array.
 -   Outputs: List of two items
-    -   Matrix of 7 columns (each column represeting a day of the week) with $\\frac{24}{\\tau}$ number of rows, where *τ* is the averaging time
+    -   Matrix of 7 columns (each column representing a day of the week) with $\\frac{24}{\\tau}$ number of rows, where *τ* is the averaging time
 
 Fetch seasonal data
 -------------------
@@ -438,7 +473,7 @@ getSeasonalData_August <- function(avg_time){
 }
 ```
 
-For an averaging time *τ*, the function computes the 24 hour seasonality over the week from the August dataset and also stores it in a .csv file with title where *x* = *τ* × 60 to avoid recomputation -- similar to a cache.
+For an averaging time *τ*, the function computes the 24 hour seasonality over the week from the August data set and also stores it in a .csv file with title where *x* = *τ* × 60 to avoid re computation -- similar to a cache.
 
 -   Input: Averaging time *τ*
 -   Output: Data frame of length $\\frac{ 7 \\times 24}{\\tau}$
@@ -458,11 +493,11 @@ head(df.sea.w)
     ## 5 2018-09-16 02:30:00 Sunday 0.4626000    150    2
     ## 6 2018-09-16 03:00:00 Sunday 0.4403979    180    3
 
-Master data frame from Sepetember dataset
------------------------------------------
+Master data frame from September dataset
+----------------------------------------
 
 ``` r
-getMasterdf_Sepetember <- function(avg_time){
+getMasterdf_September <- function(avg_time){
   destfile=paste('TSA Cached data/master_sep_',
                  as.character(avg_time*60),'.csv', sep="")
   
@@ -479,7 +514,7 @@ getMasterdf_Sepetember <- function(avg_time){
 }
 ```
 
-Computes the master data frame from the early Sepetember dataset and stores it in a .csv file where *x* = *τ* × 60 to avoid recomputation.
+Computes the master data frame from the early September data set and stores it in a .csv file where *x* = *τ* × 60 to avoid re computation.
 
 -   Input: Averaging time *τ*
 -   Output: Data frame
@@ -500,7 +535,7 @@ return(sea.w)
 }
 ```
 
-For a dataset `df.new`, the function returns a column with weekly seasonality for each day of the `df.new` data frame. For eg. for a 3 day data-set with `{Sunday, Monday, Tuesday}`, the funciton returns an array `{Seasonal Sunday, Seasonal Monday, Seasonal Tuesday}`
+For a data set `df.new`, the function returns a column with weekly seasonality for each day of the `df.new` data frame. For eg. for a 3 day data-set with `{Sunday, Monday, Tuesday}`, the function returns an array `{Seasonal Sunday, Seasonal Monday, Seasonal Tuesday}`
 
 ### Usage
 

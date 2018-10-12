@@ -28,6 +28,7 @@ There are two main data sets used
 
 - library(png)
 - library(grid)
+- library(highfrequency)
 - library(quantreg)
 - library(TTR)
 - library(stats)

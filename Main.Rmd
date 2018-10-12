@@ -64,7 +64,7 @@ avg_time = 0.5
 #                               'Raw Sensor Data/Climo_co_corr_IISc_1_10.csv', 
 #                               'Raw Sensor Data/Wind_speed_corr_IISc_1_20.csv', 
 #                               avg_time)
-df.new <- getMasterdf_Sepetember(avg_time)
+df.new <- getMasterdf_September(avg_time)
 refTime <- as.POSIXct(df.new$time)
 
 # Plot overall time series
@@ -185,7 +185,7 @@ plot.Zconc_Zws(df.new, df.specs, avg_time)
 ```{r, echo=TRUE, warning=FALSE}
 # avg_time= 1/12
 # 
-# df.new <- getMasterdf_Sepetember(avg_time)
+# df.new <- getMasterdf_September(avg_time)
 
 df.sea.d <- getSeasonality(df.new, avg_time)
 df.sea.w <- getSeasonalData_August(avg_time)
