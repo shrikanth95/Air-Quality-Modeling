@@ -1,8 +1,8 @@
 ---
 title: "Time Series Analysis for Climo with Wind Data"
 output: 
-  html_document:
-  rmarkdown::github_document:
+  # html_document:
+  rmarkdown::github_document
 #
   # beamer_presentation:
   #   slide_level: 2
