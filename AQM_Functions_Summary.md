@@ -234,7 +234,23 @@ getSeasonality <- function(df.new, avg_time){
 -   Inputs: Master Data frame, averaging time *τ*
 -   Output: Data frame with $\\frac{24}{\\tau}$ rows, where *τ* is the averaging time.
 
-usage
+**NOTE** This function is limited to daily averages. The similar function `getAverage_daily` is mean to extract daily and weekly seasonality and hence based on a dictionary implementation.
+
+Usage
+-----
+
+``` r
+df.seasonal <- getSeasonality(df.new, avg_time)
+head(df.seasonal)
+```
+
+    ##        conc  wdir    wspeed
+    ## 1 0.6567702 157.5 0.2158000
+    ## 2 0.5644327 175.5 0.2854667
+    ## 3 0.5454712 175.5 0.2018095
+    ## 4 0.5004690 171.0 0.1663333
+    ## 5 0.4819282 189.0 0.1321810
+    ## 6 0.4504125 202.5 0.1539238
 
 Compute and return Z score of an array
 --------------------------------------
@@ -423,6 +439,20 @@ The function is used to compute the weekly seasonal data based on the dictionary
     -   CI: Desired confidence interval. Should not be an array.
 -   Outputs: List of two items
     -   Matrix of 7 columns (each column representing a day of the week) with $\\frac{24}{\\tau}$ number of rows, where *τ* is the averaging time
+
+### Usage
+
+``` r
+day_h <- days_summary[[1]]
+day_dict <- days_summary[[2]]
+    
+week_flag = min(day_h)
+days_all<- split(xts.c, f = "days") # A list of lists storing data for each of the 38 days 
+days <- days_all[2:length(days_all)]
+    
+data_summary <- getAverage_daily(days, day_dict, avg_time, week_flag)
+seasonal_dow <- data_summary$average
+```
 
 Fetch seasonal data
 -------------------
