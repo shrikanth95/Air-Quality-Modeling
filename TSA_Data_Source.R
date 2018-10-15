@@ -8,7 +8,7 @@
 #   - Averaging time in hours (float)
 # - Outputs: Master data frame 
 
-get_ts_master_dataFrame <- function(fn.ts.wdir, fn.ts.conc, fn.ts.ws, avg_time){
+get_ts_master_dataFrame <- function(fn.ts.wdir, fn.ts.conc, fn.ts.ws, fn.ts.tmp, avg_time){
   
   C_data <- read.csv(file = fn.ts.conc, header = TRUE, sep = ";")
   cTime <-  as.POSIXct(C_data$Time)#(,"%Y-%m-%d %H:%M:%S", tz = "")
@@ -19,7 +19,9 @@ get_ts_master_dataFrame <- function(fn.ts.wdir, fn.ts.conc, fn.ts.ws, avg_time){
   W_data.s <- read.csv(file = fn.ts.ws, header = TRUE, sep = ";")
   wTime.s <-  as.POSIXct(W_data.s$Time)#(,"%Y-%m-%d %H:%M:%S", tz = "")
   
-  
+  T_data <- read.csv(file = fn.ts.tmp, header = TRUE, sep = ";")
+  tTime <-  as.POSIXct(T_data$Time)#(,"%Y-%m-%d %H:%M:%S", tz = "")
+
   # C_data <- read.csv(file = 'Raw Sensor Data/Climo_co_corr_IISc_1_10.csv', header = TRUE, sep = ";")
   #   cTime <-  as.POSIXct(C_data$Time)#(,"%Y-%m-%d %H:%M:%S", tz = "")
   #   
@@ -42,14 +44,18 @@ get_ts_master_dataFrame <- function(fn.ts.wdir, fn.ts.conc, fn.ts.ws, avg_time){
   len_w.s <- length(xts.ws)
   ws_w.s <- as.numeric(mean(diff(wTime.s)))*60 # sampling frequecy (seconds)
   
-  endTime = min(end(xts.wd), end(xts.c), end(xts.ws))
-  startTime = max(start(xts.wd), start(xts.c), start(xts.ws))
+  xts.t <- xts(x = T_data$Value, order.by = tTime)
+  len_t <- length(xts.t)
+  ws_t <- as.numeric(mean(diff(tTime)))*60 # sampling frequecy (seconds)
+  
+  endTime = min(end(xts.wd), end(xts.c), end(xts.ws), end(xts.t))
+  startTime = max(start(xts.wd), start(xts.c), start(xts.ws), start(xts.t))
   
   # Select the subset where all data is available 
   xts.ws = window(xts.ws, start= startTime, end = endTime)
   xts.c = window(xts.c, start= startTime, end = endTime)
   xts.wd = window(xts.wd, start= startTime, end = endTime)
-  
+  xts.t = window(xts.t, start= startTime, end = endTime)
   
   
   idx = endpoints(xts.ws,on  = "days")
@@ -62,12 +68,16 @@ get_ts_master_dataFrame <- function(fn.ts.wdir, fn.ts.conc, fn.ts.ws, avg_time){
   idx = endpoints(xts.c,on  = "days")
   xts.c = xts.c[(idx[2]+1):idx[length(idx)-1]]
   
+  idx = endpoints(xts.t,on  = "days")
+  xts.t = xts.t[(idx[2]+1):idx[length(idx)-1]]
+  
   num_days = length(split(xts.ws, f = "days"))
   # Downsample
   xts.ds.c <- downSample(xts.c, avg_time)
   xts.ds.ws <- downSample(xts.ws, avg_time)
   xts.ds.wd <- downSample(xts.wd, avg_time, type = "periodic")
-  
+  xts.ds.t <- downSample(xts.t, avg_time)
+    
   day_of_week <- character(num_days*(24/avg_time))
   week_of_set <- character(num_days*(24/avg_time))
   
@@ -85,6 +95,7 @@ get_ts_master_dataFrame <- function(fn.ts.wdir, fn.ts.conc, fn.ts.ws, avg_time){
                    conc = xts.ds.c,
                    wdir = xts.ds.wd,
                    wspeed = xts.ds.ws,
+                   temp = xts.ds.t,
                    minute = hour(time)*60+minute(time),
                    hour = hour(time),
                    dow = day_of_week,
