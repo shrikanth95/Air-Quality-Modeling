@@ -458,7 +458,7 @@ plot.NV_conc_char<-function(df.new, df.seasonal, df.specs, avg_time, folder = "p
   #geom_line(aes(y = ql.dc, linetype="dotted"), colour = '5th percentile - desea')+geom_line(aes(y = qh.dc, linetype="dotted",colour = '95th percentile - desea') )
   
   plot.folder <- paste(folder,"/NV_conc_char_ToD/", sep="")
-  dir.create(plot.folder, showWarnings=FALSE, recursive=TRUE)
+  dir.create(plot.folder, showWarnings = FALSE, recursive=TRUE)
   
   for(format in formats){
     plot.filename <- paste(plot.folder,"dfName=",df.specs,".",format,sep="")
