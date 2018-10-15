@@ -106,9 +106,9 @@ plot.weekQuantiles_Aug<-function(avg_time, type = "overview", folder = "plots", 
   plt <- ggplot(df.master, aes(x = Time, y = Concentrations, color = type )) +
     geom_line(size = 1) + scale_x_datetime(date_labels = "%H")+
     facet_wrap(.~ day, ncol = 3)+
-    ylim(0,3.5) +
+    ylim(0,3.5) + xlab("Time of day (Hour)")+
     labs(color = "Legend") +
-    theme_grey(base_size = 14)+ theme(axis.text.x = element_text(angle=0))
+    theme_grey(base_size = 14)+ theme(axis.text.x = element_text(angle=0))#, legend.position = "bottom")
   
   plot.folder <- paste(folder,"/weekQuantiles_Aug/",sep="")
   dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
