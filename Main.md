@@ -83,6 +83,11 @@ Seasonality from August dataset
 
 ![](Main_files/figure-markdown_github/unnamed-chunk-5-1.png)
 
+Quantile plots
+--------------
+
+![](Main_files/figure-markdown_github/unnamed-chunk-6-1.png)
+
 Effect of Wind Speed
 ====================
 
@@ -131,7 +136,7 @@ Concentration vs Wind Direction
 plot.Hist_conc_wd(df.new, df.specs, avg_time)
 ```
 
-![](Main_files/figure-markdown_github/unnamed-chunk-6-1.png)
+![](Main_files/figure-markdown_github/unnamed-chunk-7-1.png)
 
 Concentration vs Wind Direction
 -------------------------------
@@ -208,7 +213,7 @@ df.sea.w <- getSeasonalData_August(avg_time)
 plot.scat_ws_wdecon(df.new, df.sea.d,df.sea.w, avg_time)
 ```
 
-![](Main_files/figure-markdown_github/unnamed-chunk-7-1.png)
+![](Main_files/figure-markdown_github/unnamed-chunk-8-1.png)
 
 Effect of Temperatute
 =====================
@@ -216,7 +221,7 @@ Effect of Temperatute
 Seasonaltiy with concentration and temperature
 ----------------------------------------------
 
-![](Main_files/figure-markdown_github/unnamed-chunk-8-1.png)
+![](Main_files/figure-markdown_github/unnamed-chunk-9-1.png)
 
 Correlation of concentration with temperature
 ---------------------------------------------

@@ -149,7 +149,7 @@ downSample <- function(data, avg_time, type = "non-periodic"){
 
 getAverage_daily<- function(days, day_dict, avg_time, week_flag, CI){
   
-  missing.CI = missing(CI)
+  missing.CI = (CI==-1)
   missing.week_flag = missing(week_flag)
   
   ds <- array(0, c(24/avg_time, 7))
@@ -238,6 +238,35 @@ pad_df_weeklySea <- function(df.new, df.sea.w){
     sea.w[idx] <- rep(df.sea.w$conc[df.sea.w$dow==dow], length(idx)/(24/avg_time))
   }
 return(sea.w)
+}
+
+getLongDataFrame <- function(seasonal_dow, quantile_high, quantile_low){
+  test <- cbind(seasonal_dow, quantile_high, quantile_low)
+  
+  means <- fortify(seasonal_dow)
+  names(means)<- c("Time", names(day_dict))
+  
+  qlow <- fortify(quantile_low)
+  names(qlow)<- c("Time", names(day_dict))
+  
+  qhigh <- fortify(quantile_high)
+  names(qhigh)<- c("Time", names(day_dict))
+  
+  
+  means.m <- melt(means,id.vars = "Time", value.name = "Concentrations", variable.name = "day")
+  qlow.m <- melt(qlow, id.vars = "Time", value.name = "Concentrations", variable.name = "day")
+  qhigh.m <- melt(qhigh,id.vars = "Time", value.name = "Concentrations", variable.name = "day")
+  
+  
+  
+  means.m$type <- "mean"
+  qlow.m$type <- "5% Quantile"
+  qhigh.m$type <- "95% Quantile"
+  
+  
+  all_tmp <- merge(means.m, qlow.m, all= TRUE)
+  all_data <- merge(qhigh.m, all_tmp, all = TRUE)
+  return(all_data)
 }
 
 ## NOTE: THIS FUNCTIONS FROM THIS POINT ARE ONLY FOR REFERENCE AND IS NOT USED

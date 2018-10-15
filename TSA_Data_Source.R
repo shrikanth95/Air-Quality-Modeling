@@ -139,9 +139,8 @@ getSeasonalData_August <- function(avg_time){
 #     }
     
         
-    data_summary <- getAverage_daily(days, day_dict, avg_time, week_flag)
+    data_summary <- getAverage_daily(days, day_dict, avg_time, week_flag, CI = -1)
     seasonal_dow <- data_summary$average
-
     
     df.sea <- data.frame(Sunday = seasonal_dow[,1],
                          Monday = seasonal_dow[,2],

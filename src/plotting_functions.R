@@ -31,7 +31,7 @@ plot.All_seasonality <- function(df.sea.w, type = "overview", title="Daily and W
     plt <- ggplot(df.sea.w, aes(x = hour, y =  conc))+
       ylab("Concentrations")+
       xlab("Time (Hours)")+
-      geom_line(size = 2)+geom_point(size = 2.5) + 
+      geom_line(size = 1)+geom_point(size = 1.5) + 
       facet_wrap(.~dow, ncol= 3)+ theme_grey(base_size = 15) 
       # theme(axis.text.x = element_text(size = 16),axis.text.y = element_text(size = 16))
   }
@@ -57,7 +57,81 @@ plot.All_seasonality <- function(df.sea.w, type = "overview", title="Daily and W
   print(plt)
 }
 
+## Computes and plots the quantiles for weekly August data 
+# Input: Averaging time
 
+plot.weekQuantiles_Aug<-function(avg_time, type = "overview", folder = "plots", formats=c("PDF", "PNG")){
+  destfile=paste('TSA Cached data/sea_CO_aug_all_',
+                 as.character(avg_time*60),'.csv', sep="")
+  
+  if (!file.exists(destfile)) {
+    C_data <- read.csv(file = 'Raw Sensor Data/Climo_CO_23.csv', header = TRUE, sep = ";")
+    cTime <-  as.POSIXct(C_data$Time)#(,"%Y-%m-%d %H:%M:%S", tz = "")
+    
+    C_xts <- xts(x = C_data$Value, order.by = cTime)
+    
+    # A list of lists storing data for each of the 38 days 
+    
+    days_summary <- removeAnomaly(C_xts)
+    day_h <- days_summary[[1]]
+    day_dict <- days_summary[[2]]
+    
+    
+    week_flag = min(day_h)
+    days_all<- split(C_xts, f = "days") # A list of lists storing data for each of the 38 days
+    days <- days_all[1:length(days_all)]
+    # 
+    #     for(i in 1:7){
+    #       for(j in day_dict[[i]]){
+    #         print(length(days[[j]]))
+    #       }
+    #     }
+    
+    data_summary <- getAverage_daily(days, day_dict, avg_time, week_flag, CI = -1)
+    seasonal_dow <- data_summary$average
+    
+    data_summary <- getAverage_daily(days, day_dict, avg_time, week_flag, 0.95)
+    quantile_high <- data_summary$quantile_summ
+    
+    data_summary <- getAverage_daily(days, day_dict, avg_time, week_flag, 0.05)
+    quantile_low <- data_summary$quantile_summ
+    
+    df.master <- getLongDataFrame(seasonal_dow, quantile_high, quantile_low)
+    
+    write.csv(df.master, file = destfile, row.names = FALSE)
+  }
+  
+  df.master <- read.csv(file = destfile, header = TRUE, sep = ",")
+  df.master$Time <- as.POSIXct(df.master$Time)
+  plt <- ggplot(df.master, aes(x = Time, y = Concentrations, color = type )) +
+    geom_line(size = 1) + scale_x_datetime(date_labels = "%H")+
+    facet_wrap(.~ day, ncol = 3)+
+    ylim(0,3.5) +
+    labs(color = "Legend") +
+    theme_grey(base_size = 14)+ theme(axis.text.x = element_text(angle=0))
+  
+  plot.folder <- paste(folder,"/weekQuantiles_Aug/",sep="")
+  dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
+  
+  # record plot
+  #	print(data)
+  for(format in formats){
+    plot.filename <- paste(plot.folder,"type=",type,".",format,sep="")
+    if(!is.na(format)){
+      if(format=="PDF")
+        pdf(file=plot.filename,bg="white")
+      else if(format=="PNG")
+        png(filename=plot.filename,width=800,height=800,units="px",pointsize=20,bg="white")
+    }
+    
+    print(plt) #suppressMessages(print(plt))
+    
+    if(!is.na(format))
+      dev.off()
+  }
+  print(plt)
+  # 
+}
 
 ## Plots the overall time series data
 # Inputs: 

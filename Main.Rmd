@@ -116,6 +116,13 @@ plot.All_seasonality(df.sea.w, type = "all")
 plot.All_seasonality(df.sea.w, type = "overview")
 ```
 
+## Quantile plots
+```{r}
+avg_time = 1
+plot.weekQuantiles_Aug(avg_time, type = "overview")
+
+```
+
 
 # Effect of Wind Speed
 
