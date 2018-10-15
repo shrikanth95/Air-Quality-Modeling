@@ -98,6 +98,20 @@ hist(df.new$wdir, main = "Histogram of wind directions", xlab = "Angle w.r.t to 
 
 - Majority of the directions are limited to $130^{\circ}$ and $270^{\circ}$
 
+# Seasonality from August dataset
+
+```{r}
+
+df.sea.w <- getSeasonalData_August(1)
+plot.All_seasonality(df.sea.w, type = "all")
+```
+
+```{r}
+
+plot.All_seasonality(df.sea.w, type = "overview")
+```
+
+
 # Effect of Wind Speed
 
 ## Effect of wind Speed on Concentrations
@@ -192,5 +206,12 @@ df.sea.d <- getSeasonality(df.new, avg_time)
 df.sea.w <- getSeasonalData_August(avg_time)
 
 plot.scat_ws_wdecon(df.new, df.sea.d,df.sea.w, avg_time)
+```
+
+# Effect of Temperatute
+
+##  Seasonaltiy with Temperature and 
+```{r}
+
 ```
 

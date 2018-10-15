@@ -39,7 +39,7 @@ checkFlats <- function(sample_season){
 #   - Named list of length 7 (representing the day of the week) where each item is a numeric array that shows the indexes of the xts object belonging to day
 
 removeAnomaly <- function(data, threshold = daily_threshold, s_period = "daily", type = "Pollutant"){
-  
+  # data = C_xts
   data = split(data, f = "days")
   if(s_period == "daily") {
     sea_dict <- list(Sunday = 0, Monday = 0, Tuesday = 0, Wednesday = 0, 
@@ -105,7 +105,7 @@ removeAnomaly <- function(data, threshold = daily_threshold, s_period = "daily",
 #   - An xts object that is downsampled 
 
 downSample <- function(data, avg_time, type = "non-periodic"){
-  
+  # data = days[[sample_day_idx]]
   # data = xts.c
   # avg_time = 0.25
   if ((end(data)-start(data)) < (as.POSIXct(Sys.timeDate()) - as.POSIXct(Sys.timeDate() - 3600))) return()
@@ -161,15 +161,15 @@ getAverage_daily<- function(days, day_dict, avg_time, week_flag, CI){
     
     dow <- day_dict[[i]] 
     num_days = length(dow[1:week_flag])
-    if(missing.week_flag) {
-      week_flag <- num_days
-    }
+    # if(missing.week_flag) {
+    #   week_flag <- num_days
+    # }
     
     if(!missing.CI) quant <- array(0, c(24/avg_time, week_flag))
     
     k = 1
+    
     for (sample_day_idx in dow[1:week_flag]){
-      
       C_ds <- downSample(days[[sample_day_idx]], avg_time)
       daily_mean[i, k] = mean(coredata(C_ds))
       ds[, i] = ds[, i] + coredata(C_ds)/num_days
@@ -266,7 +266,7 @@ getDayofWeek_summ<- function(day_of_week, days, day_dict, avg_time, week_flag){
 ## COmputes the moving average of a data set.  
 compute_MA <- function(days, day_dict, MA_time, week_flag){
   missing.week_flag = missing(week_flag)
-  daily_threshold <- floor(24*3600/ws)
+  # daily_threshold <- floor(24*3600/ws)
   
   sea_dict <- list(Sunday = 0, Monday = 0, Tuesday = 0, Wednesday = 0, 
                    Thursday = 0, Friday = 0, Saturday = 0)

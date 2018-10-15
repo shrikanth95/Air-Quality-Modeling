@@ -127,12 +127,21 @@ getSeasonalData_August <- function(avg_time){
     day_h <- days_summary[[1]]
     day_dict <- days_summary[[2]]
     
-    week_flag = min(day_h)
-    days_all<- split(C_xts, f = "days") # A list of lists storing data for each of the 38 days 
-    days <- days_all[2:length(days_all)]
     
+    week_flag = min(day_h)
+    days_all<- split(C_xts, f = "days") # A list of lists storing data for each of the 38 days
+    days <- days_all[1:length(days_all)]
+# 
+#     for(i in 1:7){
+#       for(j in day_dict[[i]]){
+#         print(length(days[[j]]))
+#       }
+#     }
+    
+        
     data_summary <- getAverage_daily(days, day_dict, avg_time, week_flag)
     seasonal_dow <- data_summary$average
+    
     df.sea <- data.frame(Sunday = seasonal_dow[,1],
                          Monday = seasonal_dow[,2],
                          Tuesday = seasonal_dow[,3],
@@ -140,6 +149,7 @@ getSeasonalData_August <- function(avg_time){
                          Thursday = seasonal_dow[,5],
                          Friday = seasonal_dow[,6],
                          Saturday = seasonal_dow[,7])
+    
     t <- as.POSIXct(rownames(df.sea))
     df.sea$time <- t
     df.sea.m <- melt(df.sea,id.vars = "time",variable.name = "dow", value.name = "conc")

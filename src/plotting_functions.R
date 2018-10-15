@@ -6,6 +6,58 @@ library(corrplot)
 library(plotrix)
 # source("TSA_source.R")
 
+## Plots the seasonality according to hour of the day of each day of the week.
+# Note: works only for the August data frame which is the output of the getSeasonalData_August() function
+
+# Inputs:
+#   - master data frame
+
+plot.All_seasonality <- function(df.sea.w, type = "overview", title="Daily and Weekly Characteristics", folder = "plots", formats=c("PDF", "PNG")){
+  avg_time <- as.numeric(as.POSIXct(df.sea.w$time[2])-as.POSIXct(df.sea.w$time[1]))/60
+  if(type == "all"){
+    plt <- ggplot(df.sea.w, aes(x = hour, y =  conc, color= dow))+
+      ylab("Concentrations")+
+      xlab("Time (Hours)")+
+      geom_line(size = 2)+geom_point(size = 2.5) + 
+      theme(axis.text.x = element_text(size = 16),
+            axis.text.y = element_text(size = 16), 
+            axis.title.y = element_text(size = 16),
+            axis.title.x = element_text(size = 16),
+            legend.text = element_text(size = 15),
+            legend.title = element_text(size = 15))+
+      labs(color = "Day of Week")
+  }
+  if(type == "overview"){
+    plt <- ggplot(df.sea.w, aes(x = hour, y =  conc))+
+      ylab("Concentrations")+
+      xlab("Time (Hours)")+
+      geom_line(size = 2)+geom_point(size = 2.5) + 
+      facet_wrap(.~dow, ncol= 3)+
+      theme(axis.text.x = element_text(size = 16),axis.text.y = element_text(size = 16))
+  }
+  plot.folder <- paste(folder,"/All_seasonality/",sep="")
+  dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
+  
+  # record plot
+  #	print(data)
+  for(format in formats){
+    plot.filename <- paste(plot.folder,"type=",type,".",format,sep="")
+    if(!is.na(format)){
+      if(format=="PDF")
+        pdf(file=plot.filename,bg="white")
+      else if(format=="PNG")
+        png(filename=plot.filename,width=800,height=800,units="px",pointsize=20,bg="white")
+    }
+    
+    print(plt) #suppressMessages(print(plt))
+    
+    if(!is.na(format))
+      dev.off()
+  }
+  print(plt)
+}
+
+
 
 ## Plots the overall time series data
 # Inputs: 
