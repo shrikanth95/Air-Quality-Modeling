@@ -101,7 +101,7 @@ Construct master dataframe
 --------------------------
 
 ``` r
-get_ts_master_dataFrame <- function(fn.ts.wdir, fn.ts.conc, fn.ts.ws, avg_time){
+get_ts_master_dataFrame <- function(fn.ts.wdir, fn.ts.conc, fn.ts.ws, fn.ts.tmp, avg_time){
   
   C_data <- read.csv(file = fn.ts.conc, header = TRUE, sep = ";")
   cTime <-  as.POSIXct(C_data$Time)#(,"%Y-%m-%d %H:%M:%S", tz = "")
@@ -112,7 +112,9 @@ get_ts_master_dataFrame <- function(fn.ts.wdir, fn.ts.conc, fn.ts.ws, avg_time){
   W_data.s <- read.csv(file = fn.ts.ws, header = TRUE, sep = ";")
   wTime.s <-  as.POSIXct(W_data.s$Time)#(,"%Y-%m-%d %H:%M:%S", tz = "")
   
-  
+  T_data <- read.csv(file = fn.ts.tmp, header = TRUE, sep = ";")
+  tTime <-  as.POSIXct(T_data$Time)#(,"%Y-%m-%d %H:%M:%S", tz = "")
+
   # C_data <- read.csv(file = 'Raw Sensor Data/Climo_co_corr_IISc_1_10.csv', header = TRUE, sep = ";")
   #   cTime <-  as.POSIXct(C_data$Time)#(,"%Y-%m-%d %H:%M:%S", tz = "")
   #   
@@ -135,14 +137,18 @@ get_ts_master_dataFrame <- function(fn.ts.wdir, fn.ts.conc, fn.ts.ws, avg_time){
   len_w.s <- length(xts.ws)
   ws_w.s <- as.numeric(mean(diff(wTime.s)))*60 # sampling frequecy (seconds)
   
-  endTime = min(end(xts.wd), end(xts.c), end(xts.ws))
-  startTime = max(start(xts.wd), start(xts.c), start(xts.ws))
+  xts.t <- xts(x = T_data$Value, order.by = tTime)
+  len_t <- length(xts.t)
+  ws_t <- as.numeric(mean(diff(tTime)))*60 # sampling frequecy (seconds)
+  
+  endTime = min(end(xts.wd), end(xts.c), end(xts.ws), end(xts.t))
+  startTime = max(start(xts.wd), start(xts.c), start(xts.ws), start(xts.t))
   
   # Select the subset where all data is available 
   xts.ws = window(xts.ws, start= startTime, end = endTime)
   xts.c = window(xts.c, start= startTime, end = endTime)
   xts.wd = window(xts.wd, start= startTime, end = endTime)
-  
+  xts.t = window(xts.t, start= startTime, end = endTime)
   
   
   idx = endpoints(xts.ws,on  = "days")
@@ -155,12 +161,16 @@ get_ts_master_dataFrame <- function(fn.ts.wdir, fn.ts.conc, fn.ts.ws, avg_time){
   idx = endpoints(xts.c,on  = "days")
   xts.c = xts.c[(idx[2]+1):idx[length(idx)-1]]
   
+  idx = endpoints(xts.t,on  = "days")
+  xts.t = xts.t[(idx[2]+1):idx[length(idx)-1]]
+  
   num_days = length(split(xts.ws, f = "days"))
-    # Downsample
+  # Downsample
   xts.ds.c <- downSample(xts.c, avg_time)
   xts.ds.ws <- downSample(xts.ws, avg_time)
   xts.ds.wd <- downSample(xts.wd, avg_time, type = "periodic")
-  
+  xts.ds.t <- downSample(xts.t, avg_time)
+    
   day_of_week <- character(num_days*(24/avg_time))
   week_of_set <- character(num_days*(24/avg_time))
   
@@ -174,15 +184,17 @@ get_ts_master_dataFrame <- function(fn.ts.wdir, fn.ts.conc, fn.ts.ws, avg_time){
   
   c(length(xts.ds.c),length(week_of_set))
   time<- time(xts.ds.c)#, format="%H:%M:%S")
-  df <- data.frame(conc = xts.ds.c,
+  df <- data.frame(time = time,
+                   conc = xts.ds.c,
                    wdir = xts.ds.wd,
                    wspeed = xts.ds.ws,
+                   temp = xts.ds.t,
                    minute = hour(time)*60+minute(time),
                    hour = hour(time),
                    dow = day_of_week,
                    wos = week_of_set)
   return(df)
-
+  
 }
 ```
 
@@ -200,33 +212,42 @@ avg_time= 0.5 # Hours
 df.new = get_ts_master_dataFrame('Raw Sensor Data/Wind_direction_corr_IISc_1_20.csv', 
                               'Raw Sensor Data/Climo_co_corr_IISc_1_10.csv', 
                               'Raw Sensor Data/Wind_speed_corr_IISc_1_20.csv', 
+                              'Raw Sensor Data/Temperature_corr_IISc_29_11.csv',
                               avg_time)
 head(df.new)
 ```
 
-    ##                          conc wdir    wspeed minute hour      dow wos
-    ## 2018-09-01 00:30:00 0.6780800  135 0.2266667     30    0 Saturday   1
-    ## 2018-09-01 01:00:00 0.5895200  270 0.3400000     60    1 Saturday   1
-    ## 2018-09-01 01:30:00 0.5497200  135 0.4571429     90    1 Saturday   1
-    ## 2018-09-01 02:00:00 0.5080800  135 0.4533333    120    2 Saturday   1
-    ## 2018-09-01 02:30:00 0.4929167  135 0.3200000    150    2 Saturday   1
-    ## 2018-09-01 03:00:00 0.4776800  135 0.3633333    180    3 Saturday   1
+    ##                                    time      conc wdir    wspeed     temp
+    ## 2018-09-01 00:30:00 2018-09-01 00:30:00 0.6780800  135 0.2266667 23.50180
+    ## 2018-09-01 01:00:00 2018-09-01 01:00:00 0.5895200  270 0.3400000 23.39928
+    ## 2018-09-01 01:30:00 2018-09-01 01:30:00 0.5497200  135 0.4571429 23.32840
+    ## 2018-09-01 02:00:00 2018-09-01 02:00:00 0.5080800  135 0.4533333 23.25436
+    ## 2018-09-01 02:30:00 2018-09-01 02:30:00 0.4929167  135 0.3200000 23.04583
+    ## 2018-09-01 03:00:00 2018-09-01 03:00:00 0.4776800  135 0.3633333 22.93756
+    ##                     minute hour      dow wos
+    ## 2018-09-01 00:30:00     30    0 Saturday   1
+    ## 2018-09-01 01:00:00     60    1 Saturday   1
+    ## 2018-09-01 01:30:00     90    1 Saturday   1
+    ## 2018-09-01 02:00:00    120    2 Saturday   1
+    ## 2018-09-01 02:30:00    150    2 Saturday   1
+    ## 2018-09-01 03:00:00    180    3 Saturday   1
 
 Daily seasonality
 -----------------
 
 ``` r
 getSeasonality <- function(df.new, avg_time){
+  refTime <- as.POSIXct(df.new$time)
   df.seasonal <- data.frame(conc = array(0, 24/avg_time), wdir = array(0, 24/avg_time), 
-                            wspeed = array(0, 24/avg_time))
+                            wspeed = array(0, 24/avg_time), temp = array(0, 24/avg_time))
   for(i in 1:(24/avg_time-1)){
     df.seasonal[i, ] <- unname(colMeans(df.new[df.new$minute==round(i*avg_time*60), 
-                                               c(1,2,3)],na.rm = TRUE))
+                                               c(2,3,4, 5)],na.rm = TRUE))
   }
   i = 0
   df.seasonal[(24/avg_time), ] <- unname(colMeans(df.new[df.new$minute==round(i*avg_time*60), 
-                                                         c(1,2,3)],na.rm = TRUE))
-  
+                                                         c(2,3,4,5)],na.rm = TRUE))
+  df.seasonal$x <- refTime[1:(24/avg_time)]
   return(df.seasonal)
 }
 ```
@@ -244,13 +265,13 @@ df.seasonal <- getSeasonality(df.new, avg_time)
 head(df.seasonal)
 ```
 
-    ##        conc  wdir    wspeed
-    ## 1 0.6567702 157.5 0.2158000
-    ## 2 0.5644327 175.5 0.2854667
-    ## 3 0.5454712 175.5 0.2018095
-    ## 4 0.5004690 171.0 0.1663333
-    ## 5 0.4819282 189.0 0.1321810
-    ## 6 0.4504125 202.5 0.1539238
+    ##        conc  wdir    wspeed     temp                   x
+    ## 1 0.6567702 157.5 0.2158000 24.43474 2018-09-01 00:30:00
+    ## 2 0.5644327 175.5 0.2854667 24.13142 2018-09-01 01:00:00
+    ## 3 0.5454712 175.5 0.2018095 23.87182 2018-09-01 01:30:00
+    ## 4 0.5004690 171.0 0.1663333 23.61484 2018-09-01 02:00:00
+    ## 5 0.4819282 189.0 0.1321810 23.42170 2018-09-01 02:30:00
+    ## 6 0.4504125 202.5 0.1539238 23.17674 2018-09-01 03:00:00
 
 Compute and return Z score of an array
 --------------------------------------
@@ -273,6 +294,7 @@ Dictionary of data
 ------------------
 
 ``` r
+## Used to find regions of 
 checkFlats <- function(sample_season){ 
   return(!(any(
     period.apply(sample_season, 
@@ -579,17 +601,17 @@ df.new$desea.w <- df.new$conc - df.new$sea.w # Deseasoned by weekly sesonality
 head(df.new)
 ```
 
-    ##                          conc wdir    wspeed minute hour      dow wos
-    ## 2018-09-01 00:30:00 0.6780800  135 0.2266667     30    0 Saturday   1
-    ## 2018-09-01 01:00:00 0.5895200  270 0.3400000     60    1 Saturday   1
-    ## 2018-09-01 01:30:00 0.5497200  135 0.4571429     90    1 Saturday   1
-    ## 2018-09-01 02:00:00 0.5080800  135 0.4533333    120    2 Saturday   1
-    ## 2018-09-01 02:30:00 0.4929167  135 0.3200000    150    2 Saturday   1
-    ## 2018-09-01 03:00:00 0.4776800  135 0.3633333    180    3 Saturday   1
-    ##                         sea.w    desea.w
-    ## 2018-09-01 00:30:00 0.6292700 0.04881000
-    ## 2018-09-01 01:00:00 0.5299137 0.05960625
-    ## 2018-09-01 01:30:00 0.5069832 0.04273683
-    ## 2018-09-01 02:00:00 0.5048700 0.00321000
-    ## 2018-09-01 02:30:00 0.4626000 0.03031667
-    ## 2018-09-01 03:00:00 0.4403979 0.03728208
+    ##                                    time      conc wdir    wspeed     temp
+    ## 2018-09-01 00:30:00 2018-09-01 00:30:00 0.6780800  135 0.2266667 23.50180
+    ## 2018-09-01 01:00:00 2018-09-01 01:00:00 0.5895200  270 0.3400000 23.39928
+    ## 2018-09-01 01:30:00 2018-09-01 01:30:00 0.5497200  135 0.4571429 23.32840
+    ## 2018-09-01 02:00:00 2018-09-01 02:00:00 0.5080800  135 0.4533333 23.25436
+    ## 2018-09-01 02:30:00 2018-09-01 02:30:00 0.4929167  135 0.3200000 23.04583
+    ## 2018-09-01 03:00:00 2018-09-01 03:00:00 0.4776800  135 0.3633333 22.93756
+    ##                     minute hour      dow wos     sea.w    desea.w
+    ## 2018-09-01 00:30:00     30    0 Saturday   1 0.6292700 0.04881000
+    ## 2018-09-01 01:00:00     60    1 Saturday   1 0.5299137 0.05960625
+    ## 2018-09-01 01:30:00     90    1 Saturday   1 0.5069832 0.04273683
+    ## 2018-09-01 02:00:00    120    2 Saturday   1 0.5048700 0.00321000
+    ## 2018-09-01 02:30:00    150    2 Saturday   1 0.4626000 0.03031667
+    ## 2018-09-01 03:00:00    180    3 Saturday   1 0.4403979 0.03728208

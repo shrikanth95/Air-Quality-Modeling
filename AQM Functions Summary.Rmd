@@ -242,18 +242,18 @@ head(df.new)
 ## Daily seasonality
 
 ```{r, echo=TRUE}
-
 getSeasonality <- function(df.new, avg_time){
+  refTime <- as.POSIXct(df.new$time)
   df.seasonal <- data.frame(conc = array(0, 24/avg_time), wdir = array(0, 24/avg_time), 
-                            wspeed = array(0, 24/avg_time))
+                            wspeed = array(0, 24/avg_time), temp = array(0, 24/avg_time))
   for(i in 1:(24/avg_time-1)){
     df.seasonal[i, ] <- unname(colMeans(df.new[df.new$minute==round(i*avg_time*60), 
-                                               c(1,2,3)],na.rm = TRUE))
+                                               c(2,3,4,5)],na.rm = TRUE))
   }
   i = 0
   df.seasonal[(24/avg_time), ] <- unname(colMeans(df.new[df.new$minute==round(i*avg_time*60), 
-                                                         c(1,2,3)],na.rm = TRUE))
-  
+                                                         c(2,3,4,5)],na.rm = TRUE))
+  df.seasonal$x <- refTime[1:(24/avg_time)]
   return(df.seasonal)
 }
 
