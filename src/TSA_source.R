@@ -244,13 +244,13 @@ getLongDataFrame <- function(seasonal_dow, quantile_high, quantile_low){
   test <- cbind(seasonal_dow, quantile_high, quantile_low)
   
   means <- fortify(seasonal_dow)
-  names(means)<- c("Time", names(day_dict))
+  names(means)<- c("Time", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
   
   qlow <- fortify(quantile_low)
-  names(qlow)<- c("Time", names(day_dict))
+  names(qlow)<- c("Time", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
   
   qhigh <- fortify(quantile_high)
-  names(qhigh)<- c("Time", names(day_dict))
+  names(qhigh)<- c("Time", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
   
   
   means.m <- melt(means,id.vars = "Time", value.name = "Concentrations", variable.name = "day")

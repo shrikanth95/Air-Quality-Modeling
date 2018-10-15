@@ -99,7 +99,7 @@ Effect of wind Speed on Concentrations
 # refTime <- as.POSIXct(rownames(df.new))
 df.seasonal <- getSeasonality(df.new, avg_time)
 # Plots the daily seasonality w.r.t wind speed and wind direction
-plot.DF_Seasonal_c_ws(df.seasonal, "Seasonal plot test", avg_time, "plots")
+plot.DF_Seasonal_c_ws(df.seasonal, "Seasonal_plot_test", avg_time, "plots")
 ```
 
 ![](Main_files/figure-markdown_github/sea_conc_ws-1.png)
