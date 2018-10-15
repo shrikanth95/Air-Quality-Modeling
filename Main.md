@@ -71,7 +71,17 @@ hist(df.new$wdir, main = "Histogram of wind directions", xlab = "Angle w.r.t to 
 
 ![](Main_files/figure-markdown_github/wind_directions_hist-1.png)
 
--   Majority of the directions are limited to 130<sup>∘</sup> and 270<sup>∘</sup>
+Temperature
+-----------
+
+![](Main_files/figure-markdown_github/unnamed-chunk-3-1.png)
+
+Seasonality from August dataset
+===============================
+
+![](Main_files/figure-markdown_github/unnamed-chunk-4-1.png)
+
+![](Main_files/figure-markdown_github/unnamed-chunk-5-1.png)
 
 Effect of Wind Speed
 ====================
@@ -121,7 +131,7 @@ Concentration vs Wind Direction
 plot.Hist_conc_wd(df.new, df.specs, avg_time)
 ```
 
-![](Main_files/figure-markdown_github/unnamed-chunk-3-1.png)
+![](Main_files/figure-markdown_github/unnamed-chunk-6-1.png)
 
 Concentration vs Wind Direction
 -------------------------------
@@ -198,4 +208,32 @@ df.sea.w <- getSeasonalData_August(avg_time)
 plot.scat_ws_wdecon(df.new, df.sea.d,df.sea.w, avg_time)
 ```
 
-![](Main_files/figure-markdown_github/unnamed-chunk-4-1.png)
+![](Main_files/figure-markdown_github/unnamed-chunk-7-1.png)
+
+Effect of Temperatute
+=====================
+
+Seasonaltiy with concentration and temperature
+----------------------------------------------
+
+![](Main_files/figure-markdown_github/unnamed-chunk-8-1.png)
+
+Correlation of concentration with temperature
+---------------------------------------------
+
+``` r
+folder = "plots"
+df.specs = "test"
+plot.Corr_t_c(df.seasonal, df.specs, avg_time)
+```
+
+![](Main_files/figure-markdown_github/t_conc_corr-1.png)
+
+Effect of temperature on de-seasoned data
+-----------------------------------------
+
+``` r
+plot.Scat_t_deseasoned(df.new, df.seasonal, df.specs, avg_time)
+```
+
+![](Main_files/figure-markdown_github/scat_t_conc-1.png)

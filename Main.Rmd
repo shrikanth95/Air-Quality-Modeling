@@ -96,7 +96,12 @@ hist(df.new$wdir, main = "Histogram of wind directions", xlab = "Angle w.r.t to 
 
 ```
 
-- Majority of the directions are limited to $130^{\circ}$ and $270^{\circ}$
+## Temperature
+
+```{r}
+plot(df.new$temp, type = 'l')
+```
+
 
 # Seasonality from August dataset
 
@@ -135,6 +140,8 @@ folder = "plots"
 df.specs = "test"
 plot.Corr_ws_c(df.seasonal, df.specs, avg_time)
 ```
+
+
 
 ## Effect of wind speed on de-seasoned data
 
@@ -210,8 +217,28 @@ plot.scat_ws_wdecon(df.new, df.sea.d,df.sea.w, avg_time)
 
 # Effect of Temperatute
 
-##  Seasonaltiy with Temperature and 
+
+
+##  Seasonaltiy with concentration and temperature 
 ```{r}
+
+plot.DF_Seasonal_c_t(df.seasonal, "Seasonal plot test", avg_time, "plots")
 
 ```
 
+
+## Correlation of concentration with temperature
+
+```{r t_conc_corr, echo = TRUE, fig.height=5}
+folder = "plots"
+df.specs = "test"
+plot.Corr_t_c(df.seasonal, df.specs, avg_time)
+```
+
+
+## Effect of temperature on de-seasoned data
+
+```{r scat_t_conc, echo = TRUE, warning= FALSE, fig.height= 5}
+plot.Scat_t_deseasoned(df.new, df.seasonal, df.specs, avg_time)
+
+```

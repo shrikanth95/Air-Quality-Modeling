@@ -32,8 +32,8 @@ plot.All_seasonality <- function(df.sea.w, type = "overview", title="Daily and W
       ylab("Concentrations")+
       xlab("Time (Hours)")+
       geom_line(size = 2)+geom_point(size = 2.5) + 
-      facet_wrap(.~dow, ncol= 3)+
-      theme(axis.text.x = element_text(size = 16),axis.text.y = element_text(size = 16))
+      facet_wrap(.~dow, ncol= 3)+ theme_grey(base_size = 15) 
+      # theme(axis.text.x = element_text(size = 16),axis.text.y = element_text(size = 16))
   }
   plot.folder <- paste(folder,"/All_seasonality/",sep="")
   dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
@@ -162,11 +162,62 @@ plot.DF_faults<-function(df.new, df.specs, avg_time, folder = "plots",formats=c(
 
 plot.DF_Seasonal_c_ws<-function(df.seasonal, df.specs, avg_time, folder = "plots",formats=c("PDF", "PNG")){
   
-  p1 <- ggplot(df.seasonal, aes(x = x, y = conc)) + geom_line(size = 1.5) + ylab("Concentration") + theme_grey(base_size = 12)+ scale_x_datetime(date_labels = "%H:%M") + theme_grey(base_size = 15) + xlab("Time of day") + ggtitle("Seasonality of Concentrations")
-  p2 <- ggplot(df.seasonal, aes(x = x, y = wspeed)) + geom_line(size = 1.5) + ylab("Wind Speed (m/s)") + xlab("Time of day") + theme_grey(base_size = 15) + scale_x_datetime(date_labels = "%H:%M") + ggtitle("Seasonality of Wind Speeds")
+  p1 <- ggplot(df.seasonal, aes(x = x, y = conc)) + 
+    geom_line(size = 1.5) + geom_point(size = 2) + 
+    ylab("Concentration") + 
+    theme_grey(base_size = 12)+ 
+    scale_x_datetime(date_labels = "%H:%M") + 
+    theme_grey(base_size = 15) + 
+    xlab("") + ggtitle("Seasonality of Concentrations")
   
-  plt<- plot_grid(p1, p2, nrow=2)  
+  p2 <- ggplot(df.seasonal, aes(x = x, y = wspeed)) + 
+    geom_line(size = 1.5) + geom_point(size = 2) + 
+    ylab("Wind Speed (m/s)") + 
+    xlab("") + 
+    theme_grey(base_size = 15) + 
+    scale_x_datetime(date_labels = "%H:%M") + ggtitle("Seasonality of Wind Speeds")
+
+  plt<- plot_grid(p1, p2,nrow=2)  
   plot.folder <- paste(folder,"/DF_Seasonal_c_ws/",sep="")
+  dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
+  
+  # record plot
+  #	print(data)
+  for(format in formats){
+    plot.filename <- paste(plot.folder,"dfName=",df.specs,".",format,sep="")
+    if(!is.na(format)){
+      if(format=="PDF")
+        pdf(file=plot.filename,bg="white")
+      else if(format=="PNG")
+        png(filename=plot.filename,width=800,height=800,units="px",pointsize=20,bg="white")
+    }
+    
+    print(plt) #suppressMessages(print(plt))
+    
+    if(!is.na(format))
+      dev.off()
+  }
+  print(plt)
+}
+plot.DF_Seasonal_c_t<-function(df.seasonal, df.specs, avg_time, folder = "plots",formats=c("PDF", "PNG")){
+  
+  p1 <- ggplot(df.seasonal, aes(x = x, y = conc)) + 
+    geom_line(size = 1.5) + geom_point(size = 2) + 
+    ylab("Concentration") + 
+    theme_grey(base_size = 12)+ 
+    scale_x_datetime(date_labels = "%H:%M") + 
+    theme_grey(base_size = 15) + 
+    xlab("") + ggtitle("Seasonality of Concentrations")
+  
+  p3 <- ggplot(df.seasonal, aes(x = x, y = temp)) + 
+    geom_line(size = 1.5) + geom_point(size = 2) + 
+    ylab("Temperature") + 
+    xlab("Time of day") + 
+    theme_grey(base_size = 15) + 
+    scale_x_datetime(date_labels = "%H:%M") + 
+    ggtitle("Seasonality of Temperatures")
+  plt<- plot_grid(p1, p3, nrow=2)  
+  plot.folder <- paste(folder,"/DF_Seasonal_c_t/",sep="")
   dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
   
   # record plot
@@ -231,6 +282,49 @@ plot.Corr_ws_c<-function(df.seasonal, df.specs, avg_time, folder = "plots",forma
   print(plt)
 }
 
+plot.Corr_t_c<-function(df.seasonal, df.specs, avg_time, folder = "plots",formats=c("PDF", "PNG")){
+  
+  
+  df.seasonal$z.conc <- computeZscore(df.seasonal$conc)
+  p1 <- ggplot(df.seasonal, aes(x = temp, y = conc)) + 
+    geom_point(size = 2) + 
+    xlab("Temperature") + 
+    ylab("Concentration") + 
+    ggtitle("Concentrations vs Temperature over all days") +
+    scale_color_gradient(low="red", high="blue") + 
+    theme_grey(base_size = 14) + 
+    labs(color = "Wind Directions") #+ theme(legend.position="none")
+
+  p2 <- ggplot(df.seasonal, aes(x = temp, y = z.conc)) + 
+    geom_point(size = 2) + 
+    xlab("Temperature") + ylab("Z score of Concentration") +
+    scale_color_gradient(low="red", high="blue") + 
+    theme_grey(base_size = 14)
+  
+  plt<- plot_grid(p1, p2, nrow = 2)
+  plot.folder <- paste(folder,"/Corr_t_c/",sep="")
+  dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
+  
+  # record plot
+  #	print(data)
+  for(format in formats){
+    plot.filename <- paste(plot.folder,"dfName=",df.specs,".",format,sep="")
+    if(!is.na(format)){
+      if(format=="PDF")
+        pdf(file=plot.filename,bg="white")
+      else if(format=="PNG")
+        png(filename=plot.filename,width=800,height=800,units="px",pointsize=20,bg="white")
+    }
+    
+    print(plt) #suppressMessages(print(plt))
+    
+    if(!is.na(format))
+      dev.off()
+  }
+  print(plt)
+}
+
+
 # Plots the correlations of wind speed on de-seasoned data
 # - Input
 #   - df.new: Master data frame
@@ -252,6 +346,45 @@ plot.Scat_ws_deseasoned<-function(df.new, df.seasonal, df.specs, avg_time, folde
     scale_color_gradient(low="red", high="blue") + theme_grey(base_size = 14) + labs(color = "Wind Directions") #+ 
   
   plot.folder <- paste(folder,"/Scat_ws_deseasoned/",sep="")
+  dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
+  
+  # record plot
+  #	print(data)
+  for(format in formats){
+    plot.filename <- paste(plot.folder,"dfName=",df.specs,".",format,sep="")
+    if(!is.na(format)){
+      if(format=="PDF")
+        pdf(file=plot.filename,bg="white")
+      else if(format=="PNG")
+        png(filename=plot.filename,width=800,height=800,units="px",pointsize=20,bg="white")
+    }
+    
+    print(plt) #suppressMessages(print(plt))
+    
+    if(!is.na(format))
+      dev.off()
+  }  
+  print(plt)
+}
+
+
+plot.Scat_t_deseasoned<-function(df.new, df.seasonal, df.specs, avg_time, folder = "plots", formats = c("PDF", "PNG")){
+  
+  df.new$sea <- rep(df.seasonal$conc, nrow(df.new)/(24/avg_time))
+  
+  df.new$desea <- df.new$conc - df.new$sea
+  
+  # df.clean <- df.new[complete.cases(df.new), ]
+  plt<-  ggplot(df.new, aes(x = temp, y = desea, color = wdir)) + 
+    geom_point(size = 2) + 
+    xlab("Temperature") + 
+    ylab("De-seasoned concentration") + 
+    ggtitle("Concentrations vs Wind Speeds over all days") +
+    scale_color_gradient(low="red", high="blue") + 
+    theme_grey(base_size = 14) + 
+    labs(color = "Wind Directions") #+ 
+  
+  plot.folder <- paste(folder,"/Scat_t_deseasoned/",sep="")
   dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
   
   # record plot

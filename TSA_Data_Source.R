@@ -141,6 +141,7 @@ getSeasonalData_August <- function(avg_time){
         
     data_summary <- getAverage_daily(days, day_dict, avg_time, week_flag)
     seasonal_dow <- data_summary$average
+
     
     df.sea <- data.frame(Sunday = seasonal_dow[,1],
                          Monday = seasonal_dow[,2],
@@ -175,11 +176,12 @@ getMasterdf_September <- function(avg_time){
   if (file.exists(destfile)) {
     return(read.csv(file = destfile, header = TRUE, sep = ","))
   }
-  df = get_ts_master_dataFrame('Raw Sensor Data/Wind_direction_corr_IISc_1_20.csv', 
-                               'Raw Sensor Data/Climo_co_corr_IISc_1_10.csv', 
-                               'Raw Sensor Data/Wind_speed_corr_IISc_1_20.csv', 
-                               avg_time)
+  df.new = get_ts_master_dataFrame('Raw Sensor Data/Wind_direction_corr_IISc_1_20.csv', 
+                                   'Raw Sensor Data/Climo_co_corr_IISc_1_10.csv', 
+                                   'Raw Sensor Data/Wind_speed_corr_IISc_1_20.csv', 
+                                   'Raw Sensor Data/Temperature_corr_IISc_29_11.csv',
+                                   avg_time)
   
-  write.csv(df, file = destfile, row.names = FALSE)
-  return(df)
+  write.csv(df.new, file = destfile, row.names = FALSE)
+  return(df.new)
 }
