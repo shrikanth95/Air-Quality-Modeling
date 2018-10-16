@@ -145,10 +145,17 @@ Concentration vs Wind Direction
 
 ``` r
 # df.new.clean <- df.new[complete.cases(df.new), ]
+tmp <- avg_time
+avg_time <- 1/6
+df.new <- getMasterdf_September(avg_time)
 plot.conc_ws_on_wd(df.new, df.specs, avg_time)
 ```
 
 ![](Main_files/figure-markdown_github/avg_ws_wdir-1.png)
+
+``` r
+avg_time <- tmp
+```
 
 -   Wind directions 90<sup>∘</sup> and 315<sup>∘</sup> result in similar concentrations despite having higher wind speeds.
 
@@ -162,6 +169,12 @@ df.seasonal <- getSeasonality(df.new, avg_time)
 
 plot.scat_ws_decon(df.new, df.seasonal, df.specs, avg_time)
 ```
+
+    ## Warning: Removed 18 rows containing missing values (geom_point).
+
+    ## Warning: Removed 18 rows containing missing values (geom_point).
+
+    ## Warning: Removed 18 rows containing missing values (geom_point).
 
 ![](Main_files/figure-markdown_github/scat_desea_ws_wdir-1.png)
 

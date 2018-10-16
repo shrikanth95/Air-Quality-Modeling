@@ -173,6 +173,7 @@ plot.Hist_conc_wd(df.new, df.specs, avg_time)
 # df.new.clean <- df.new[complete.cases(df.new), ]
 tmp <- avg_time
 avg_time <- 1/6
+df.specs = "conc_ws_on_wd"
 df.new <- getMasterdf_September(avg_time)
 plot.conc_ws_on_wd(df.new, df.specs, avg_time)
 avg_time <- tmp

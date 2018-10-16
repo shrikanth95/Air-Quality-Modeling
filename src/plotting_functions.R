@@ -553,21 +553,24 @@ plot.conc_ws_on_wd<-function(df.new, df.specs,avg_time, folder = "plots", format
     geom_line(size = 1) + 
     ylim(min(range(df.c$val)[1], 0),max(df.c$val)) + 
     labs(color = "Legend")+ 
-    xlab("Wind Direction (m/s)") + 
-    ylab("Average Concentration") + 
+    xlab("") + 
+    ylab("Avg. Concentration") + 
     geom_point(size = 2) + 
     theme_grey(base_size = 14) + 
-    ggtitle("Concentration vs Wind Direction")
+    ggtitle("Concentration vs Wind Direction")+
+    theme(legend.position="none")
   p2.2 <- ggplot(df.ws, aes(x = uni.x, y = val, color = type)) + 
     geom_line(size  = 1) + 
     ylim(min(range(df.ws$val)[1], 0),max(df.ws$val)) + 
-    labs(color = "Legend")+ 
-    xlab("Wind Direction") + 
-    ylab("Average Wind Speed") + 
+    xlab("Wind Direction (degrees)") + 
+    ylab("Avg. Wind Speed") + 
     geom_point(size= 2) + 
-    theme_grey(base_size = 14)
+    labs(color = "")+
+    theme_grey(base_size = 14)+
+    ggtitle("Wind Speed vs Wind Direction")+
+    theme(legend.position="bottom", legend.box = "horizontal")
   
-  plt <- plot_grid(p1.2, p2.2, align = "v", nrow = 2)
+  plt <- plot_grid(p1.2, p2.2, align = "v", nrow = 2, rel_heights = c(0.45, 0.55))
   
   plot.folder <- paste(folder,"/conc_ws_on_wd/",sep="")
   dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
