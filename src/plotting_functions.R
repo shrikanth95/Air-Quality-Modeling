@@ -326,12 +326,12 @@ plot.Corr_ws_c<-function(df.seasonal, df.specs, avg_time, folder = "plots",forma
   
   df.seasonal$z.conc <- computeZscore(df.seasonal$conc)
   p1 <- ggplot(df.seasonal, aes(x = wspeed, y = conc)) + 
-    geom_point(size = 1.5) + 
-    xlab("Wind Speed") + ylab("Concentration") + ggtitle("Concentrations vs Wind Speeds over all days") +
+    geom_point(size = 2) + xlab("")+
+    ylab("Concentration") + ggtitle("Concentrations vs Wind Speeds") +
     scale_color_gradient(low="red", high="blue") + theme_grey(base_size = 14) + labs(color = "Wind Directions") #+ theme(legend.position="none")
   p2 <- ggplot(df.seasonal, aes(x = wspeed, y = z.conc)) + 
-    geom_point(size = 1.5) + 
-    xlab("Wind Speed") + ylab("Z score of Concentration") +
+    geom_point(size = 2) + ggtitle("Z-score of Concentrations vs Wind Speeds") +
+    xlab("Wind Speed") + ylab("Z-score of Concentration") +
     scale_color_gradient(low="red", high="blue") + theme_grey(base_size = 14)
   
   plt<- plot_grid(p1, p2, nrow = 2)
@@ -416,8 +416,10 @@ plot.Scat_ws_deseasoned<-function(df.new, df.seasonal, df.specs, avg_time, folde
   
   # df.clean <- df.new[complete.cases(df.new), ]
   plt<-  ggplot(df.new, aes(x = wspeed, y = desea, color = wdir)) + 
-    geom_point(size = 1.5) + 
-    xlab("Wind Speed") + ylab("De-seasoned concentration") + ggtitle("Concentrations vs Wind Speeds over all days") +
+    geom_point(size = 2) + 
+    xlab("Wind Speed") + 
+    ylab("De-seasoned concentration") + 
+    # ggtitle("Concentrations vs Wind Speeds over all days") +
     scale_color_gradient(low="red", high="blue") + theme_grey(base_size = 14) + labs(color = "Wind Directions") #+ 
   
   plot.folder <- paste(folder,"/Scat_ws_deseasoned/",sep="")
@@ -553,7 +555,7 @@ plot.conc_ws_on_wd<-function(df.new, df.specs,avg_time, folder = "plots", format
     labs(color = "Legend")+ 
     xlab("Wind Direction (m/s)") + 
     ylab("Average Concentration") + 
-    geom_point(size = 3) + 
+    geom_point(size = 2) + 
     theme_grey(base_size = 14) + 
     ggtitle("Concentration vs Wind Direction")
   p2.2 <- ggplot(df.ws, aes(x = uni.x, y = val, color = type)) + 
@@ -562,7 +564,7 @@ plot.conc_ws_on_wd<-function(df.new, df.specs,avg_time, folder = "plots", format
     labs(color = "Legend")+ 
     xlab("Wind Direction") + 
     ylab("Average Wind Speed") + 
-    geom_point(size= 3) + 
+    geom_point(size= 2) + 
     theme_grey(base_size = 14)
   
   plt <- plot_grid(p1.2, p2.2, align = "v", nrow = 2)

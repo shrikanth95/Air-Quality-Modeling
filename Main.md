@@ -23,7 +23,7 @@ Main dataframe
 --------------
 
 ``` r
-avg_time = 0.5
+avg_time = 1
 
 # df.new <- get_ts_master_dataFrame('Raw Sensor Data/Wind_direction_corr_IISc_1_20.csv', 
 #                               'Raw Sensor Data/Climo_co_corr_IISc_1_10.csv', 
@@ -111,7 +111,7 @@ Correlation of concentration with wind speed
 
 ``` r
 folder = "plots"
-df.specs = "test"
+df.specs = "Corr_ws_c"
 plot.Corr_ws_c(df.seasonal, df.specs, avg_time)
 ```
 
@@ -121,6 +121,8 @@ Effect of wind speed on de-seasoned data
 ----------------------------------------
 
 ``` r
+folder = "plots"
+df.specs = "Scat_ws_deseasoned"
 plot.Scat_ws_deseasoned(df.new, df.seasonal, df.specs, avg_time)
 ```
 
@@ -160,12 +162,6 @@ df.seasonal <- getSeasonality(df.new, avg_time)
 
 plot.scat_ws_decon(df.new, df.seasonal, df.specs, avg_time)
 ```
-
-    ## Warning: Removed 2 rows containing missing values (geom_point).
-
-    ## Warning: Removed 2 rows containing missing values (geom_point).
-
-    ## Warning: Removed 2 rows containing missing values (geom_point).
 
 ![](Main_files/figure-markdown_github/scat_desea_ws_wdir-1.png)
 

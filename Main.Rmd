@@ -59,7 +59,7 @@ dir.create("plots",showWarnings=FALSE,recursive=TRUE)
 
 ```{r overall_dataset, echo=TRUE, warning=FALSE, fig.height=5}
 
-avg_time = 0.5
+avg_time = 1
 
 # df.new <- get_ts_master_dataFrame('Raw Sensor Data/Wind_direction_corr_IISc_1_20.csv', 
 #                               'Raw Sensor Data/Climo_co_corr_IISc_1_10.csv', 
@@ -143,7 +143,7 @@ plot.DF_Seasonal_c_ws(df.seasonal, "Seasonal_plot_test", avg_time, "plots")
 ## Correlation of concentration with wind speed
 ```{r ws_conc_corr, echo = TRUE, fig.height=5}
 folder = "plots"
-df.specs = "test"
+df.specs = "Corr_ws_c"
 plot.Corr_ws_c(df.seasonal, df.specs, avg_time)
 ```
 
@@ -152,6 +152,8 @@ plot.Corr_ws_c(df.seasonal, df.specs, avg_time)
 ## Effect of wind speed on de-seasoned data
 
 ```{r scat_ws_conc, echo = TRUE, warning= FALSE, fig.height= 5}
+folder = "plots"
+df.specs = "Scat_ws_deseasoned"
 plot.Scat_ws_deseasoned(df.new, df.seasonal, df.specs, avg_time)
 
 ```
@@ -169,7 +171,11 @@ plot.Hist_conc_wd(df.new, df.specs, avg_time)
 
 ```{r avg_ws_wdir, echo  = TRUE, warning=FALSE, fig.height= 5}
 # df.new.clean <- df.new[complete.cases(df.new), ]
+tmp <- avg_time
+avg_time <- 1/6
+df.new <- getMasterdf_September(avg_time)
 plot.conc_ws_on_wd(df.new, df.specs, avg_time)
+avg_time <- tmp
 ```
 
 - Wind directions $90^{\circ}$ and $315^{\circ}$ result in similar concentrations despite having higher wind speeds.

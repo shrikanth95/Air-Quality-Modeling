@@ -25,8 +25,8 @@ get_ts_master_dataFrame <- function(fn.ts.wdir, fn.ts.conc, fn.ts.ws, fn.ts.tmp,
   # C_data <- read.csv(file = 'Raw Sensor Data/Climo_co_corr_IISc_1_10.csv', header = TRUE, sep = ";")
   #   cTime <-  as.POSIXct(C_data$Time)#(,"%Y-%m-%d %H:%M:%S", tz = "")
   #   
-  #   W_data.d <- read.csv(file = 'Raw Sensor Data/Wind_direction_corr_IISc_1_20.csv', header = TRUE, sep = ";")
-  #   wTime.d <-  as.POSIXct(W_data.d$Time)#(,"%Y-%m-%d %H:%M:%S", tz = "")
+    W_data.d <- read.csv(file = 'Raw Sensor Data/Wind_direction_corr_IISc_1_20.csv', header = TRUE, sep = ";")
+    wTime.d <-  as.POSIXct(W_data.d$Time)#(,"%Y-%m-%d %H:%M:%S", tz = "")
   #   
   #   W_data.s <- read.csv(file = 'Raw Sensor Data/Wind_speed_corr_IISc_1_20.csv', header = TRUE, sep = ";")
   #   wTime.s <-  as.POSIXct(W_data.s$Time)#(,"%Y-%m-%d %H:%M:%S", tz = "")
