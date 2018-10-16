@@ -562,7 +562,7 @@ plot.conc_ws_on_wd<-function(df.new, df.specs,avg_time, folder = "plots", format
   p2.2 <- ggplot(df.ws, aes(x = uni.x, y = val, color = type)) + 
     geom_line(size  = 1) + 
     ylim(min(range(df.ws$val)[1], 0),max(df.ws$val)) + 
-    xlab("Wind Direction (degrees)") + 
+    xlab("Wind Direction ") + 
     ylab("Avg. Wind Speed") + 
     geom_point(size= 2) + 
     labs(color = "")+
@@ -791,11 +791,18 @@ plot.conc_on_ws<- function(df.new, df.seasonal, df.specs, avg_time, folder = "pl
   
   df.m <- melt(df.batch, id.vars = "ws")
   
-  p1 <- ggplot(df.m[df.m$variable!="var",], aes(x = ws, y= value, color = variable)) + geom_line(size = 1)+xlab("")+ylab("Average Conc.")  + theme_grey(base_size = 15) + scale_colour_manual(values =c('mean'='black','ql'='green', "qh" = "red", "conc" = "blue"), labels = c("Avg. De-conc","5% Quantile", "95% Quantile", "Avg. conc")) +labs(color  = "Legend")
-  
+  p1 <- ggplot(df.m[df.m$variable!="var",], 
+               aes(x = ws, y= value, color = variable)) + 
+    geom_line(size = 1)+
+    xlab("")+ylab("Average Conc.")  + 
+    theme_grey(base_size = 14) + 
+    scale_colour_manual(values =c('mean'='black','ql'='green', "qh" = "red", "conc" = "blue"), 
+                        labels = c("Avg. De-conc","5% Quantile", "95% Quantile", "Avg. conc")) +
+    theme(legend.position="bottom", legend.box = "horizontal")+
+    labs(color = "")
   p2 <- ggplot(df.batch, aes(x = ws, y= batch.v)) + geom_point(size = 2)+xlab("Wind Speed (m/s)")+ylab("Variance") +   theme_grey(base_size = 15)
   
-  plt <- plot_grid(p1, p2 , nrow = 2)
+  plt <- plot_grid(p1, p2 , nrow = 2,rel_heights = c(0.55, 0.45))
   plot.folder <- paste(folder,"/conc_on_ws/", sep="")
   dir.create(plot.folder, showWarnings=FALSE, recursive=TRUE)
   

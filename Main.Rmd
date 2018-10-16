@@ -176,7 +176,15 @@ avg_time <- 1/6
 df.specs = "conc_ws_on_wd"
 df.new <- getMasterdf_September(avg_time)
 plot.conc_ws_on_wd(df.new, df.specs, avg_time)
-avg_time <- tmp
+
+avg_time = 1
+
+# df.new <- get_ts_master_dataFrame('Raw Sensor Data/Wind_direction_corr_IISc_1_20.csv', 
+#                               'Raw Sensor Data/Climo_co_corr_IISc_1_10.csv', 
+#                               'Raw Sensor Data/Wind_speed_corr_IISc_1_20.csv', 
+#                               avg_time)
+df.new <- getMasterdf_September(avg_time)
+
 ```
 
 - Wind directions $90^{\circ}$ and $315^{\circ}$ result in similar concentrations despite having higher wind speeds.
