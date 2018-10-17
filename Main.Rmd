@@ -205,13 +205,31 @@ plot.scat_ws_decon(df.new, df.seasonal, df.specs, avg_time)
 ## Noise variance and concentration characteristic for Climo
 
 ```{r noise_var_conc_char, echo = TRUE, fig.height= 5, warning=FALSE, fig.cap="\\label{fig:var_C_C}"}
+tmp <- avg_time
+avg_time <- 1/6
+df.specs = "NV_conc_char"
+df.new <- getMasterdf_September(avg_time)
+
 plot.NV_conc_char(df.new, df.seasonal, df.specs, avg_time)
+
+avg_time = 1
+
+# df.new <- get_ts_master_dataFrame('Raw Sensor Data/Wind_direction_corr_IISc_1_20.csv', 
+#                               'Raw Sensor Data/Climo_co_corr_IISc_1_10.csv', 
+#                               'Raw Sensor Data/Wind_speed_corr_IISc_1_20.csv', 
+#                               avg_time)
+df.new <- getMasterdf_September(avg_time)
+
+
+
+
 ```
 
 
 ## Average of deseasoned concentrations conditioned by wind speed
 
 ```{r binning_ws_conc, echo = TRUE, fig.height=5, warning =FALSE}
+df.specs = "conc_on_ws"
 plot.conc_on_ws(df.new, df.seasonal, df.specs, avg_time)
 ```
 
@@ -252,7 +270,7 @@ plot.DF_Seasonal_c_t(df.seasonal, "Seasonal_plot_test", avg_time, "plots")
 
 ```{r t_conc_corr, echo = TRUE, fig.height=5}
 folder = "plots"
-df.specs = "test"
+df.specs = "Corr_t_c"
 plot.Corr_t_c(df.seasonal, df.specs, avg_time)
 ```
 
@@ -260,6 +278,7 @@ plot.Corr_t_c(df.seasonal, df.specs, avg_time)
 ## Effect of temperature on de-seasoned data
 
 ```{r scat_t_conc, echo = TRUE, warning= FALSE, fig.height= 5}
+df.specs = "Scat_t_deseasoned"
 plot.Scat_t_deseasoned(df.new, df.seasonal, df.specs, avg_time)
 
 ```

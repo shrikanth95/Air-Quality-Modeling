@@ -363,7 +363,7 @@ plot.Corr_t_c<-function(df.seasonal, df.specs, avg_time, folder = "plots",format
   df.seasonal$z.conc <- computeZscore(df.seasonal$conc)
   p1 <- ggplot(df.seasonal, aes(x = temp, y = conc)) + 
     geom_point(size = 1.5) + 
-    xlab("Temperature") + 
+    xlab("") + 
     ylab("Concentration") + 
     ggtitle("Concentrations vs Temperature over all days") +
     scale_color_gradient(low="red", high="blue") + 
@@ -372,7 +372,7 @@ plot.Corr_t_c<-function(df.seasonal, df.specs, avg_time, folder = "plots",format
 
   p2 <- ggplot(df.seasonal, aes(x = temp, y = z.conc)) + 
     geom_point(size = 1.5) + 
-    xlab("Temperature") + ylab("Z score of Concentration") +
+    xlab("Temperature") + ylab("Z-score of Concentration") +
     scale_color_gradient(low="red", high="blue") + 
     theme_grey(base_size = 14)
   
@@ -452,14 +452,14 @@ plot.Scat_t_deseasoned<-function(df.new, df.seasonal, df.specs, avg_time, folder
   df.new$desea <- df.new$conc - df.new$sea
   
   # df.clean <- df.new[complete.cases(df.new), ]
-  plt<-  ggplot(df.new, aes(x = temp, y = desea, color = wdir)) + 
+  plt<-  ggplot(df.new, aes(x = temp, y = desea, color = hour)) + 
     geom_point(size = 1.5) + 
     xlab("Temperature") + 
     ylab("De-seasoned concentration") + 
-    ggtitle("Concentrations vs Wind Speeds over all days") +
+    # ggtitle("Concentrations vs Wind Speeds over all days") +
     scale_color_gradient(low="red", high="blue") + 
     theme_grey(base_size = 14) + 
-    labs(color = "Wind Directions") #+ 
+    labs(color = "Hour of day") #+ 
   
   plot.folder <- paste(folder,"/Scat_t_deseasoned/",sep="")
   dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
@@ -674,19 +674,19 @@ plot.NV_conc_char<-function(df.new, df.seasonal, df.specs, avg_time, folder = "p
   
   p.char1 <- ggplot(df.var.2, aes(x=desea,y=de.var)) + 
     geom_point(size = 1.5) +  xlim(-1, 1.5) + ylab(expression(paste(sigma,'(De-seasoned Concentrations)')))+
-    ylim(0, 1) +  xlab("Deseasoned Concentrations")+ theme_grey(base_size = 13)
+    xlab("Deseasoned Concentrations")+ theme_grey(base_size = 13)
   p.char2 <- ggplot(df.var.1, aes(x=conc,y=conc.var)) + 
     geom_point(size = 1.5) + 
     xlab("Concentrations") + ylab(expression(paste(sigma,'(Concentrations)')))+
-    ylim(0, 0.5)+ xlim(0.5, 1.5) +   theme_grey(base_size = 13) # + stat_smooth(method = "loess")
+    theme_grey(base_size = 13) # + stat_smooth(method = "loess")
   # p4 <- ggplot(df.var.2, aes(x=desea,y=conc.var)) + 
   #   geom_point(size = 1.5) + 
   #   ylab("") + ylim(0, 1) + theme_grey(base_size = 13)#+ stat_smooth(method = "loess")
   
-  p<- plot_grid(p.char1, p.char2, nrow = 1)
-  title <- ggdraw() + draw_label("Noise Variance and Concentration Characteristics")
+  plt <- plot_grid(p.char1, p.char2, nrow = 2)
+  # title <- ggdraw() + draw_label("Noise Variance and Concentration Characteristics")
   
-  plt<- plot_grid(title, p, ncol=1, rel_heights=c(0.1, 1)) # rel_heights values control title margins
+  # plt<- plot_grid(title, p, ncol=1, rel_heights=c(0.1, 1)) # rel_heights values control title margins
   
   
   plot.folder <- paste(folder,"/NV_conc_char/", sep="")
@@ -728,12 +728,15 @@ plot.NV_conc_char<-function(df.new, df.seasonal, df.specs, avg_time, folder = "p
   }
   tmp.1 <- data.frame(time = 0:23, Conc = conc, de.Conc = de.conc)#, ql.c = ql.c, ql.dc = ql.dc, qh.c = qh.c, qh.dc= qh.dc)
   tmp <- melt(tmp.1, id = "time")
+  dev.new(width=6, height=3)
   plt <- ggplot(tmp, aes(x = time, y  = value ,color = variable)) + 
     geom_line(size= 2)+
     #geom_line(aes(x = time, y = de.conc)) + 
-    ylab("Variance") + xlab("Time of Day (Hours)") + 
-    ggtitle("Variance by Time of Day") + 
-    theme_grey(base_size = 15)
+    ylab("Variance") + xlab("Time of Day (Hours)") + labs(color = "")+
+    # ggtitle("Variance by Time of Day") + 
+    theme_grey(base_size = 15) + theme(legend.position="bottom", legend.box = "horizontal")+
+    scale_colour_manual(values =c("Conc" = "brown2", "de.Conc" = "cyan"), 
+                        labels = c("Concentrations", "De-seasoned concentrations"))
   # + geom_line(aes(x  =0:23,  y = ql.c, linetype="dotted"), colour = '5th percentile')+geom_line(aes(x  =0:23, y = qh.c, linetype="dotted",colour = '95th percentile') ) + 
   #geom_line(aes(y = ql.dc, linetype="dotted"), colour = '5th percentile - desea')+geom_line(aes(y = qh.dc, linetype="dotted",colour = '95th percentile - desea') )
   
@@ -741,7 +744,7 @@ plot.NV_conc_char<-function(df.new, df.seasonal, df.specs, avg_time, folder = "p
   dir.create(plot.folder, showWarnings = FALSE, recursive=TRUE)
   
   for(format in formats){
-    plot.filename <- paste(plot.folder,"dfName=",df.specs,".",format,sep="")
+    plot.filename <- paste(plot.folder,"dfName=ToD_",df.specs,".",format,sep="")
     if(!is.na(format)){
       if(format=="PDF")
         pdf(file=plot.filename,bg="white")
@@ -791,18 +794,21 @@ plot.conc_on_ws<- function(df.new, df.seasonal, df.specs, avg_time, folder = "pl
   
   df.m <- melt(df.batch, id.vars = "ws")
   
-  p1 <- ggplot(df.m[df.m$variable!="var",], 
+  plt <- ggplot(df.m[df.m$variable!="var",], 
                aes(x = ws, y= value, color = variable)) + 
-    geom_line(size = 1)+
-    xlab("")+ylab("Average Conc.")  + 
+    geom_line(size = 1)+geom_point(size = 1.5)+
+    ylab("Concentration")  + xlab("Wind Speed (m/s)")+
     theme_grey(base_size = 14) + 
     scale_colour_manual(values =c('mean'='black','ql'='green', "qh" = "red", "conc" = "blue"), 
-                        labels = c("Avg. De-conc","5% Quantile", "95% Quantile", "Avg. conc")) +
+                        labels = c("Avg. de-seasoned concentration",
+                                   "5% Quantile of de-seasoned concentration", 
+                                   "95% Quantile de-seasoned concentration",
+                                   "Avg. concentration")) +
     theme(legend.position="bottom", legend.box = "horizontal")+
-    labs(color = "")
-  p2 <- ggplot(df.batch, aes(x = ws, y= batch.v)) + geom_point(size = 2)+xlab("Wind Speed (m/s)")+ylab("Variance") +   theme_grey(base_size = 15)
+    labs(color = "") + guides(col = guide_legend(nrow = 4))
+  #p2 <- ggplot(df.batch, aes(x = ws, y= batch.v)) + geom_point(size = 2)+xlab("Wind Speed (m/s)")+ylab("Variance") +   theme_grey(base_size = 15)
   
-  plt <- plot_grid(p1, p2 , nrow = 2,rel_heights = c(0.55, 0.45))
+  # plt <- plot_grid(p1, p2 , nrow = 2,rel_heights = c(0.55, 0.45))
   plot.folder <- paste(folder,"/conc_on_ws/", sep="")
   dir.create(plot.folder, showWarnings=FALSE, recursive=TRUE)
   
