@@ -80,6 +80,9 @@ plot.DF_faults(df.new,df.specs = "Carbon Monoxide", avg_time, folder = "plots")
 
 ```{r, echo = TRUE}
 df.new.clean <- df.new[complete.cases(df.new), ]
+
+# df.new$desea <- df.new$conc - df.new$sea
+  
 df.new.1 <- df.new[df.new$wos==1, ] 
 ```
 
@@ -147,6 +150,13 @@ df.specs = "Corr_ws_c"
 plot.Corr_ws_c(df.seasonal, df.specs, avg_time)
 ```
 
+## Over view of all data
+
+```{r}
+folder = "plots"
+df.specs = "dataset"
+plot.dataset(df.new, df.seasonal, df.specs, avg_time)
+```
 
 
 ## Effect of wind speed on de-seasoned data
@@ -219,7 +229,7 @@ avg_time = 1
 #                               'Raw Sensor Data/Wind_speed_corr_IISc_1_20.csv', 
 #                               avg_time)
 df.new <- getMasterdf_September(avg_time)
-
+df.seasonal <- getSeasonality(df.new, avg_time)
 
 
 

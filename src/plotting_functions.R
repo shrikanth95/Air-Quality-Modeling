@@ -57,6 +57,50 @@ plot.All_seasonality <- function(df.sea.w, type = "overview", title="Daily and W
   print(plt)
 }
 
+## Plots the summary of the master data set
+# Input:  Master and the seasonal data frame
+
+plot.dataset<-function(df.new, df.seasonal, df.specs, avg_time, folder = "plots", formats=c("PDF", "PNG")){
+  df.new$sea <- rep(df.seasonal$conc, nrow(df.new)/(24/avg_time))
+  
+  df.new$desea <- df.new$conc - df.new$sea
+  
+  df.new.1 <- df.new[df.new$wos==1, ] 
+  df.new.1 <- df.new.1[df.new.1$dow!="Saturday", ] 
+  df.new.1 <- df.new.1[df.new.1$dow!="Sunday",c(1,2,4,5, 11) ] 
+  df.new.1 <- df.new.1[,c(1,2,5,3,4)]
+  df.new.1$time <- as.POSIXct(df.new.1$time)
+  df.new.1.m <- melt(df.new.1, id.vars = "time")
+  plt <- ggplot(df.new.1.m, aes(x = time, y = value))+
+    geom_line(size = 1)+
+    facet_wrap(.~variable,nrow = 4,
+               scales = "free_y",
+               strip.position = "left", labeller = as_labeller(c(conc = "Concentrations", desea = "Deseasoned Conc.", wspeed = "Wind Speed", temp = "Temperature")))+
+    theme(strip.background = element_blank(),
+          strip.placement = "outside") + ylab("") +xlab("Time")
+  # strip.text.x = element_blank())
+  plot.folder <- paste(folder,"/dataset/",sep="")
+  dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
+  
+  # record plot
+  #	print(data)
+  for(format in formats){
+    plot.filename <- paste(plot.folder,"type=",df.specs,".",format,sep="")
+    if(!is.na(format)){
+      if(format=="PDF")
+        pdf(file=plot.filename,bg="white")
+      else if(format=="PNG")
+        png(filename=plot.filename,width=800,height=800,units="px",pointsize=20,bg="white")
+    }
+    
+    print(plt) #suppressMessages(print(plt))
+    
+    if(!is.na(format))
+      dev.off()
+  }
+  print(plt)
+}
+
 ## Computes and plots the quantiles for weekly August data 
 # Input: Averaging time
 
@@ -672,6 +716,8 @@ plot.NV_conc_char<-function(df.new, df.seasonal, df.specs, avg_time, folder = "p
   
   df.var.2 <- data.frame(time = time.day, desea = desea, de.var = desea.var.1hr, conc.var = conc.var.1hr)
   
+  df.final <- data.frame(time = time.day, de.var = desea.var.1hr, conc.var = conc.var.1hr)
+  
   p.char1 <- ggplot(df.var.2, aes(x=desea,y=de.var)) + 
     geom_point(size = 1.5) +  xlim(-1, 1.5) + ylab(expression(paste(sigma,'(De-seasoned Concentrations)')))+
     xlab("Deseasoned Concentrations")+ theme_grey(base_size = 13)
@@ -707,39 +753,30 @@ plot.NV_conc_char<-function(df.new, df.seasonal, df.specs, avg_time, folder = "p
       dev.off()
   }
   print(plt)
-  de.conc <- array(0, 24)
-  ql.dc <- array(0,24)
-  qh.dc <- array(0,24)
+  p1 <- ggplot(df.var.2, aes(x = time, y = de.var)) +  geom_point(size = 1.5,alpha = 0.5, color = "black")+ ylim(0, 0.5)+
+    stat_summary(aes(y = de.var, group=1), fun.y=mean, colour="black", geom="line",group=1, size = 1)+
+    xlab("")+ylab(expression(paste(sigma,'(De-seasoned Concentrations)')))
   
-  ql.c <- array(0,24)
-  qh.c <- array(0,24)
-  
-  conc <- array(0, 24)
-  hour.set <- 0:23
-  df.var.2 <- df.var.2[complete.cases(df.var.2), ]
-  for(i in hour.set){
-    conc[i+1] <- mean(df.var.2$conc.var[df.var.2$time == i])
-    ql.c[i+1] <- quantile(df.var.2$conc.var[df.var.2$time == i], 0.05)
-    qh.c[i+1] <- quantile(df.var.2$conc.var[df.var.2$time == i], 0.95)
-    
-    de.conc[i+1] <- mean(df.var.2$de.var[df.var.2$time == i])
-    ql.dc[i+1] <- quantile(df.var.2$de.var[df.var.2$time == i], 0.05)
-    qh.dc[i+1] <- quantile(df.var.2$de.var[df.var.2$time == i], 0.95)
-  }
-  tmp.1 <- data.frame(time = 0:23, Conc = conc, de.Conc = de.conc)#, ql.c = ql.c, ql.dc = ql.dc, qh.c = qh.c, qh.dc= qh.dc)
-  tmp <- melt(tmp.1, id = "time")
-  dev.new(width=6, height=3)
-  plt <- ggplot(tmp, aes(x = time, y  = value ,color = variable)) + 
-    geom_line(size= 2)+
-    #geom_line(aes(x = time, y = de.conc)) + 
-    ylab("Variance") + xlab("Time of Day (Hours)") + labs(color = "")+
-    # ggtitle("Variance by Time of Day") + 
-    theme_grey(base_size = 15) + theme(legend.position="bottom", legend.box = "horizontal")+
-    scale_colour_manual(values =c("Conc" = "brown2", "de.Conc" = "cyan"), 
-                        labels = c("Concentrations", "De-seasoned concentrations"))
-  # + geom_line(aes(x  =0:23,  y = ql.c, linetype="dotted"), colour = '5th percentile')+geom_line(aes(x  =0:23, y = qh.c, linetype="dotted",colour = '95th percentile') ) + 
-  #geom_line(aes(y = ql.dc, linetype="dotted"), colour = '5th percentile - desea')+geom_line(aes(y = qh.dc, linetype="dotted",colour = '95th percentile - desea') )
-  
+  p2 <- ggplot(df.var.1, aes(x = time, y = conc.var)) + geom_point(size = 1.5,alpha = 0.5, color = "black")+ ylim(0, 0.5)+
+    stat_summary(aes(y = conc.var, group=1), fun.y=mean, colour="black", geom="line",group=1, size = 1)+
+    xlab("Time of day (Hours)")+ylab(expression(paste(sigma,'(Concentrations)')))
+  plt <- plot_grid(p1, p2, nrow = 2)
+  #   
+  #   geom_poin(data = df.var.2, aes(x = time, y = de.var), size = 1.5, alpha = 0.5, color = "blue")+
+  #     stat_summary(aes(y = de.var, group=1), fun.y=mean, colour="blue", geom="line",group=1, size = 1)+
+  #     scale_colour_manual(values =c("Conc" = "red", "de.Conc" = "blue"), 
+  #                       labels = c("Concentrations", "De-seasoned concentrations"))
+  #   
+  #   df.final.m <- melt(cbind(df.final[1], as.matrix(df.final[-1])), id = "time")
+  #   
+  #   ggplot(df.var.1, aes( x = time, y = value, color = variable))+geom_point(size = 1, alpha = 0.5)+
+  #     stat_summary(aes(y = value, group=1), fun.y=mean, colour="red", geom="line",group=1, size = 1)
+  #     
+  #   
+  #   ggplot(df.var.1, aes(x = time, y = conc)) + geom_point(size = 1.5) + geom_line(aes(x = time, y = conc.var))
+  # # + geom_line(aes(x  =0:23,  y = ql.c, linetype="dotted"), colour = '5th percentile')+geom_line(aes(x  =0:23, y = qh.c, linetype="dotted",colour = '95th percentile') ) + 
+  # #geom_line(aes(y = ql.dc, linetype="dotted"), colour = '5th percentile - desea')+geom_line(aes(y = qh.dc, linetype="dotted",colour = '95th percentile - desea') )
+  # 
   plot.folder <- paste(folder,"/NV_conc_char_ToD/", sep="")
   dir.create(plot.folder, showWarnings = FALSE, recursive=TRUE)
   
@@ -790,7 +827,7 @@ plot.conc_on_ws<- function(df.new, df.seasonal, df.specs, avg_time, folder = "pl
     batch.v[i] <- var(df.new$desea[which(df.new$wspeed>windSpeeds[i] & df.new$wspeed<windSpeeds[i+1])])
     batch.ws[i] <- mean(windSpeeds[c(i, (i+1))])
   }
-  df.batch <- data.frame(ws = batch.ws, mean = batch.m, var = batch.v, ql = batch.ql, qh = batch.qh, conc = batch.c)
+  df.batch <- data.frame(ws = batch.ws, mean = batch.m, var = batch.v, ql = batch.ql, qh = batch.qh)#, conc = batch.c)
   
   df.m <- melt(df.batch, id.vars = "ws")
   
@@ -799,8 +836,8 @@ plot.conc_on_ws<- function(df.new, df.seasonal, df.specs, avg_time, folder = "pl
     geom_line(size = 1)+geom_point(size = 1.5)+
     ylab("Concentration")  + xlab("Wind Speed (m/s)")+
     theme_grey(base_size = 14) + 
-    scale_colour_manual(values =c('mean'='black','ql'='green', "qh" = "red", "conc" = "blue"), 
-                        labels = c("Avg. de-seasoned concentration",
+    scale_colour_manual(values =c('mean'='black','ql'='green', "qh" = "red"), 
+                        labels = c(#"Avg. de-seasoned concentration",
                                    "5% Quantile of de-seasoned concentration", 
                                    "95% Quantile de-seasoned concentration",
                                    "Avg. concentration")) +

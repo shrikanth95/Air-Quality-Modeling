@@ -49,6 +49,9 @@ plot.DF_faults(df.new,df.specs = "Carbon Monoxide", avg_time, folder = "plots")
 
 ``` r
 df.new.clean <- df.new[complete.cases(df.new), ]
+
+# df.new$desea <- df.new$conc - df.new$sea
+  
 df.new.1 <- df.new[df.new$wos==1, ] 
 ```
 
@@ -117,6 +120,11 @@ plot.Corr_ws_c(df.seasonal, df.specs, avg_time)
 
 ![](Main_files/figure-markdown_github/ws_conc_corr-1.png)
 
+Over view of all data
+---------------------
+
+![](Main_files/figure-markdown_github/unnamed-chunk-7-1.png)
+
 Effect of wind speed on de-seasoned data
 ----------------------------------------
 
@@ -138,7 +146,7 @@ Concentration vs Wind Direction
 plot.Hist_conc_wd(df.new, df.specs, avg_time)
 ```
 
-![](Main_files/figure-markdown_github/unnamed-chunk-7-1.png)
+![](Main_files/figure-markdown_github/unnamed-chunk-8-1.png)
 
 Concentration vs Wind Direction
 -------------------------------
@@ -147,6 +155,7 @@ Concentration vs Wind Direction
 # df.new.clean <- df.new[complete.cases(df.new), ]
 tmp <- avg_time
 avg_time <- 1/6
+df.specs = "conc_ws_on_wd"
 df.new <- getMasterdf_September(avg_time)
 plot.conc_ws_on_wd(df.new, df.specs, avg_time)
 ```
@@ -154,7 +163,13 @@ plot.conc_ws_on_wd(df.new, df.specs, avg_time)
 ![](Main_files/figure-markdown_github/avg_ws_wdir-1.png)
 
 ``` r
-avg_time <- tmp
+avg_time = 1
+
+# df.new <- get_ts_master_dataFrame('Raw Sensor Data/Wind_direction_corr_IISc_1_20.csv', 
+#                               'Raw Sensor Data/Climo_co_corr_IISc_1_10.csv', 
+#                               'Raw Sensor Data/Wind_speed_corr_IISc_1_20.csv', 
+#                               avg_time)
+df.new <- getMasterdf_September(avg_time)
 ```
 
 -   Wind directions 90<sup>∘</sup> and 315<sup>∘</sup> result in similar concentrations despite having higher wind speeds.
@@ -170,12 +185,6 @@ df.seasonal <- getSeasonality(df.new, avg_time)
 plot.scat_ws_decon(df.new, df.seasonal, df.specs, avg_time)
 ```
 
-    ## Warning: Removed 18 rows containing missing values (geom_point).
-
-    ## Warning: Removed 18 rows containing missing values (geom_point).
-
-    ## Warning: Removed 18 rows containing missing values (geom_point).
-
 ![](Main_files/figure-markdown_github/scat_desea_ws_wdir-1.png)
 
 Analysis with Variance and Concentration
@@ -185,15 +194,32 @@ Noise variance and concentration characteristic for Climo
 ---------------------------------------------------------
 
 ``` r
+tmp <- avg_time
+avg_time <- 1/6
+df.specs = "NV_conc_char"
+df.new <- getMasterdf_September(avg_time)
+
 plot.NV_conc_char(df.new, df.seasonal, df.specs, avg_time)
 ```
 
 ![](Main_files/figure-markdown_github/noise_var_conc_char-1.png)![](Main_files/figure-markdown_github/noise_var_conc_char-2.png)
 
+``` r
+avg_time = 1
+
+# df.new <- get_ts_master_dataFrame('Raw Sensor Data/Wind_direction_corr_IISc_1_20.csv', 
+#                               'Raw Sensor Data/Climo_co_corr_IISc_1_10.csv', 
+#                               'Raw Sensor Data/Wind_speed_corr_IISc_1_20.csv', 
+#                               avg_time)
+df.new <- getMasterdf_September(avg_time)
+df.seasonal <- getSeasonality(df.new, avg_time)
+```
+
 Average of deseasoned concentrations conditioned by wind speed
 --------------------------------------------------------------
 
 ``` r
+df.specs = "conc_on_ws"
 plot.conc_on_ws(df.new, df.seasonal, df.specs, avg_time)
 ```
 
@@ -222,7 +248,7 @@ df.sea.w <- getSeasonalData_August(avg_time)
 plot.scat_ws_wdecon(df.new, df.sea.d,df.sea.w, avg_time)
 ```
 
-![](Main_files/figure-markdown_github/unnamed-chunk-8-1.png)
+![](Main_files/figure-markdown_github/unnamed-chunk-9-1.png)
 
 Effect of Temperatute
 =====================
@@ -230,14 +256,14 @@ Effect of Temperatute
 Seasonaltiy with concentration and temperature
 ----------------------------------------------
 
-![](Main_files/figure-markdown_github/unnamed-chunk-9-1.png)
+![](Main_files/figure-markdown_github/unnamed-chunk-10-1.png)
 
 Correlation of concentration with temperature
 ---------------------------------------------
 
 ``` r
 folder = "plots"
-df.specs = "test"
+df.specs = "Corr_t_c"
 plot.Corr_t_c(df.seasonal, df.specs, avg_time)
 ```
 
@@ -247,6 +273,7 @@ Effect of temperature on de-seasoned data
 -----------------------------------------
 
 ``` r
+df.specs = "Scat_t_deseasoned"
 plot.Scat_t_deseasoned(df.new, df.seasonal, df.specs, avg_time)
 ```
 
