@@ -195,7 +195,7 @@ plt <- t.plt + geom_histogram(bins = 10, fill = "gray") + theme_gray(base_size =
 
 df.specs = "clust_temp_hist"
 formats = c("PDF", "PNG")
-plot.folder <- paste(folder,"/,",df.specs,"/",sep="")
+plot.folder <- paste(folder,"/",df.specs,"/",sep="")
 dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
 
 # record plot
@@ -228,7 +228,7 @@ plt <- t.plt + geom_histogram(bins = 10, fill = "gray") + theme_gray(base_size =
 
 df.specs = "clust_ws_hist"
 formats = c("PDF", "PNG")
-plot.folder <- paste(folder,"/,",df.specs,"/",sep="")
+plot.folder <- paste(folder,"/",df.specs,"/",sep="")
 dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
 
 # record plot
