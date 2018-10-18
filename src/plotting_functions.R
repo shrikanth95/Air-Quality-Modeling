@@ -463,7 +463,7 @@ plot.Corr_t_c<-function(df.seasonal, df.specs, avg_time, folder = "plots",format
 #   - folder: name of folder for the plots to be saved in.
 
 
-plot.Scat_ws_deseasoned<-function(df.new, df.seasonal, df.specs, avg_time, folder = "plots", formats = c("PDF", "PNG")){
+plot.Scat_ws_deseasoned<-function(df.new, df.seasonal, df.specs, avg_time, clustering = FALSE, folder = "plots", formats = c("PDF", "PNG")){
   
   df.new$sea <- rep(df.seasonal$conc, nrow(df.new)/(24/avg_time))
   
@@ -480,16 +480,30 @@ plot.Scat_ws_deseasoned<-function(df.new, df.seasonal, df.specs, avg_time, folde
   df.new.1$Set[idx] <- "Day"
   
   # df.clean <- df.new[complete.cases(df.new), ]
-  plt<-  ggplot(df.new.1, aes(x = wspeed, y = desea, color = Set, shape = Set)) + 
-    geom_point(size = 3) + labs(size = "")+
-    xlab("Wind Speed") +
-    ylab("De-seasoned concentration") + 
-    # ggtitle("Concentrations vs Wind Speeds over all days") +
-    # scale_color_gradient(low="red", high="blue") +
-    theme_gray(base_size = 14) #+ 
+  if (clustering == FALSE){
+    plt<-  ggplot(df.new.1, aes(x = wspeed, y = desea, color = Set, shape = Set)) + 
+      geom_point(size = 3) + labs(size = "")+
+      xlab("Wind Speed") +
+      ylab("De-seasoned concentration") + 
+      # ggtitle("Concentrations vs Wind Speeds over all days") +
+      # scale_color_gradient(low="red", high="blue") +
+      theme_gray(base_size = 14) #+ 
+    
+    plt <- plt + scale_shape_manual(values = c(0, 16)) + scale_colour_manual(values = c("chartreuse4", "slateblue4"))
+  }
+  else{
+    plt<-  ggplot(df.new.1, aes(x = wspeed, y = desea, color = Set, shape = Set)) +
+      facet_wrap(.~region)+
+      geom_point(size = 3) + labs(size = "")+
+      xlab("Wind Speed") +
+      ylab("De-seasoned concentration") + 
+      # ggtitle("Concentrations vs Wind Speeds over all days") +
+      # scale_color_gradient(low="red", high="blue") +
+      theme_gray(base_size = 14) #+ 
+    
+    plt <- plt + scale_shape_manual(values = c(0, 16)) + scale_colour_manual(values = c("chartreuse4", "slateblue4"))
+  }
   
-  tmp <- plt + scale_shape_manual(values = c(0, 16)) + scale_colour_manual(values = c("chartreuse4", "slateblue4"))
-
   plot.folder <- paste(folder,"/Scat_ws_deseasoned/",sep="")
   dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
   
@@ -513,22 +527,34 @@ plot.Scat_ws_deseasoned<-function(df.new, df.seasonal, df.specs, avg_time, folde
 }
 
 
-plot.Scat_t_deseasoned<-function(df.new, df.seasonal, df.specs, avg_time, folder = "plots", formats = c("PDF", "PNG")){
+plot.Scat_t_deseasoned<-function(df.new, df.seasonal, df.specs, avg_time, clustering = FALSE, folder = "plots", formats = c("PDF", "PNG")){
   
   df.new$sea <- rep(df.seasonal$conc, nrow(df.new)/(24/avg_time))
   
   df.new$desea <- df.new$conc - df.new$sea
   
   # df.clean <- df.new[complete.cases(df.new), ]
-  plt<-  ggplot(df.new, aes(x = temp, y = desea, color = hour)) + 
-    geom_point(size = 1.5) + 
+  if(clustering == FALSE)
+  {plt<-  ggplot(df.new, aes(x = temp, y = desea, color = hour)) + 
+    geom_point(size = 3) + 
     xlab("Temperature") + 
     ylab("De-seasoned concentration") + 
     # ggtitle("Concentrations vs Wind Speeds over all days") +
     scale_color_gradient(low="red", high="blue") + 
     theme_grey(base_size = 14) + 
     labs(color = "Hour of day") #+ 
-  
+  }
+  else{
+    plt<-  ggplot(df.new, aes(x = temp, y = desea, color = hour)) + 
+      facet_wrap(.~region)+
+      geom_point(size = 1.5) + 
+      xlab("Temperature") + 
+      ylab("De-seasoned concentration") + 
+      # ggtitle("Concentrations vs Wind Speeds over all days") +
+      scale_color_gradient(low="red", high="blue") + 
+      theme_grey(base_size = 14) + 
+      labs(color = "Hour of day") #+ 
+  }
   plot.folder <- paste(folder,"/Scat_t_deseasoned/",sep="")
   dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
   
@@ -827,7 +853,7 @@ plot.NV_conc_char<-function(df.new, df.seasonal, df.specs, avg_time, folder = "p
 #   - df.specs: name of data set (char)
 #   - folder: name of folder for the plots to be saved in.
 
-plot.conc_on_ws<- function(df.new, df.seasonal, df.specs, avg_time, folder = "plots", formats = c("PDF", "PNG")){
+plot.conc_on_ws<- function(df.new, df.seasonal, df.specs, avg_time, clustering = FALSE, folder = "plots", formats = c("PDF", "PNG")){
   
   df.new$sea <- rep(df.seasonal$conc, nrow(df.new)/(24/avg_time))
   
