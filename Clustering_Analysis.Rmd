@@ -226,7 +226,7 @@ t.plt <- ggplot(df.new, aes(x = wspeed)) + facet_wrap(.~region)
 plt <- t.plt + geom_histogram(bins = 10, fill = "gray") + theme_gray(base_size = 14) + xlab(expression(paste("Wind Speed")))
 
 
-df.specs = "clust_temp_hist"
+df.specs = "clust_ws_hist"
 formats = c("PDF", "PNG")
 plot.folder <- paste(folder,"/,",df.specs,"/",sep="")
 dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
