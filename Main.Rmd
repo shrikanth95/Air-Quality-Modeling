@@ -121,8 +121,8 @@ plot.All_seasonality(df.sea.w, type = "overview")
 
 ## Quantile plots
 ```{r}
-plot.weekQuantiles_Aug(avg_time, type = "overview")
-
+plot.weekQuantiles_Aug(avg_time, loc = "IISc")
+plot.weekQuantiles_Aug(avg_time, loc = "Electronic_City")
 ```
 
 
@@ -163,7 +163,7 @@ plot.dataset(df.new, df.seasonal, df.specs, avg_time)
 
 ```{r scat_ws_conc, echo = TRUE, warning= FALSE, fig.height= 5}
 folder = "plots"
-df.specs = "Scat_ws_deseasoned"
+df.specs = "Scat_onset_ws_deseasoned"
 plot.Scat_ws_deseasoned(df.new, df.seasonal, df.specs, avg_time)
 
 ```

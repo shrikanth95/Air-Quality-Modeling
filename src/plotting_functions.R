@@ -65,19 +65,25 @@ plot.dataset<-function(df.new, df.seasonal, df.specs, avg_time, folder = "plots"
   
   df.new$desea <- df.new$conc - df.new$sea
   
-  df.new.1 <- df.new[df.new$wos==1, ] 
-  df.new.1 <- df.new.1[df.new.1$dow!="Saturday", ] 
-  df.new.1 <- df.new.1[df.new.1$dow!="Sunday",c(1,2,4,5, 11) ] 
+  # df.new.1 <- df.new[df.new$wos==, ] 
+  # df.new.1 <- df.new.1[df.new.1$dow!="Saturday", ] 
+  # df.new.1 <- df.new.1[df.new.1$dow!="Sunday",c(1,2,4,5, 11) ] 
+  
+  df.new.1 <- df.new[,c(1,2,4,5, 11) ] 
   df.new.1 <- df.new.1[,c(1,2,5,3,4)]
   df.new.1$time <- as.POSIXct(df.new.1$time)
   df.new.1.m <- melt(df.new.1, id.vars = "time")
+  
   plt <- ggplot(df.new.1.m, aes(x = time, y = value))+
-    geom_line(size = 1)+
+    geom_line(size = 1)+theme_gray(base_size = 13)+
     facet_wrap(.~variable,nrow = 4,
                scales = "free_y",
-               strip.position = "left", labeller = as_labeller(c(conc = "Concentrations", desea = "Deseasoned Conc.", wspeed = "Wind Speed", temp = "Temperature")))+
+               strip.position = "left", labeller = as_labeller(c(conc = "Conc.", 
+                                                                 desea = "De-Conc.", 
+                                                                 wspeed = "Wind Speed", 
+                                                                 temp = "Temperature")))+
     theme(strip.background = element_blank(),
-          strip.placement = "outside") + ylab("") +xlab("Time")
+          strip.placement = "outside") + ylab("") +xlab("Time" )
   # strip.text.x = element_blank())
   plot.folder <- paste(folder,"/dataset/",sep="")
   dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
@@ -104,14 +110,19 @@ plot.dataset<-function(df.new, df.seasonal, df.specs, avg_time, folder = "plots"
 ## Computes and plots the quantiles for weekly August data 
 # Input: Averaging time
 
-plot.weekQuantiles_Aug<-function(avg_time, type = "overview", folder = "plots", formats=c("PDF", "PNG")){
-  destfile=paste('TSA Cached data/sea_CO_aug_all_',
+plot.weekQuantiles_Aug<-function(avg_time, loc = "IISc", folder = "plots", formats=c("PDF", "PNG")){
+  destfile=paste('TSA Cached data/sea_CO_aug_all_',loc,"_",
                  as.character(avg_time*60),'.csv', sep="")
   
   if (!file.exists(destfile)) {
-    C_data <- read.csv(file = 'Raw Sensor Data/Climo_CO_23.csv', header = TRUE, sep = ";")
-    cTime <-  as.POSIXct(C_data$Time)#(,"%Y-%m-%d %H:%M:%S", tz = "")
-    
+    if(loc == "IISc"){
+      C_data <- read.csv(file = 'Raw Sensor Data/Climo_CO_23.csv', header = TRUE, sep = ";")
+      cTime <-  as.POSIXct(C_data$Time)#(,"%Y-%m-%d %H:%M:%S", tz = "")
+    }
+    else if(loc == "Electronic_City"){
+      C_data <- read.csv(file = 'Raw Sensor Data/ECity_Climo_CO_23.csv', header = TRUE, sep = ";")
+      cTime <-  as.POSIXct(C_data$Time)#(,"%Y-%m-%d %H:%M:%S", tz = "")
+    }
     C_xts <- xts(x = C_data$Value, order.by = cTime)
     
     # A list of lists storing data for each of the 38 days 
@@ -161,7 +172,7 @@ plot.weekQuantiles_Aug<-function(avg_time, type = "overview", folder = "plots", 
   # record plot
   #	print(data)
   for(format in formats){
-    plot.filename <- paste(plot.folder,"type=",type,".",format,sep="")
+  plot.filename <- paste(plot.folder,"type=",loc,".",format,sep="")
     if(!is.na(format)){
       if(format=="PDF")
         pdf(file=plot.filename,bg="white")
@@ -458,14 +469,27 @@ plot.Scat_ws_deseasoned<-function(df.new, df.seasonal, df.specs, avg_time, folde
   
   df.new$desea <- df.new$conc - df.new$sea
   
+  idx <- df.new$hour>21
+  df.new.1 <- df.new
+  df.new.1$Set[idx] <- "Night"
+  
+  idx <- df.new$hour<6
+  df.new.1$Set[idx] <- "Night"
+  
+  idx <- is.na(df.new.1$Set)
+  df.new.1$Set[idx] <- "Day"
+  
   # df.clean <- df.new[complete.cases(df.new), ]
-  plt<-  ggplot(df.new, aes(x = wspeed, y = desea, color = wdir)) + 
-    geom_point(size = 2) + 
-    xlab("Wind Speed") + 
+  plt<-  ggplot(df.new.1, aes(x = wspeed, y = desea, color = Set, shape = Set)) + 
+    geom_point(size = 3) + labs(size = "")+
+    xlab("Wind Speed") +
     ylab("De-seasoned concentration") + 
     # ggtitle("Concentrations vs Wind Speeds over all days") +
-    scale_color_gradient(low="red", high="blue") + theme_grey(base_size = 14) + labs(color = "Wind Directions") #+ 
+    # scale_color_gradient(low="red", high="blue") +
+    theme_gray(base_size = 14) #+ 
   
+  tmp <- plt + scale_shape_manual(values = c(0, 16)) + scale_colour_manual(values = c("chartreuse4", "slateblue4"))
+
   plot.folder <- paste(folder,"/Scat_ws_deseasoned/",sep="")
   dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
   
