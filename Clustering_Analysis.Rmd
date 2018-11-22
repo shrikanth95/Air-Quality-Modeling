@@ -71,31 +71,32 @@ plot.DF_faults(df.new,df.specs = "Carbon Monoxide", avg_time, folder = "plots")
 
 # Clustering
 
-We can now perform the numerous tests by clustering the dataset into three major regions.
+We can now perform the numerous tests by clustering the dataset into three major clusters.
 
 ```{r}
 df.new$dos <- day(df.new$time)
 ```
 ## Clustering based on dates 
 ```{r}
-region1 <- c(2,3,4)
-region2 <- c(5,6,7)
-region3 <- c(8,9,10)
+cluster1 <- c(2,3,4)
+cluster2 <- c(5,6,7)
+cluster3 <- c(8,9,10)
 
 for(i in 1:3){
-  idx <- df.new$dos == region1[i]
-  df.new$region[idx] = "r1"
-  idx <- df.new$dos == region2[i]
-  df.new$region[idx] = "r2"
-  idx <- df.new$dos == region3[i]
-  df.new$region[idx] = "r3"
+  idx <- df.new$dos == cluster1[i]
+  df.new$cluster[idx] = "cluster1"
+  idx <- df.new$dos == cluster2[i]
+  df.new$cluster[idx] = "cluster2"
+  idx <- df.new$dos == cluster3[i]
+  df.new$cluster[idx] = "cluster3"
 }
-idx <- is.na(df.new$region)
-df.new <- df.new[!is.na(df.new$region), ]
+idx <- is.na(df.new$cluster)
+df.new <- df.new[!is.na(df.new$cluster), ]
 df.new$time = as.POSIXct(df.new$time)
-plt <- ggplot(df.new, aes(x= time, y = conc, color = region)) + 
-  geom_line(size = 1.5) +
-  ylab("COncentration")+xlab("Time")+labs(color = "Legend")
+plt_all <- ggplot(df.new, aes(x= time, y = conc, color = cluster)) +theme_gray(base_size = 24)+ 
+  geom_line(size = 1.5) + theme(legend.position = "none")+
+  # ylab(bquote('Conc. ('*mu~'g'~m^-3*')'))+xlab("Time (Days)")#+labs(color = "Legend")
+  ylab('Conc. (ppm)')+xlab("Time (Days)")#+labs(color = "Legend")
 
 folder = "plots"
 df.specs = "CO_Concentrations_clust"
@@ -114,32 +115,36 @@ for(format in formats){
       png(filename=plot.filename,width=800,height=800,units="px",pointsize=20,bg="white")
   }
   
-  print(plt) #suppressMessages(print(plt))
+  print(plt_all) #suppressMessages(print(plt))
   
   if(!is.na(format))
     dev.off()
 }  
-print(plt)
+print(plt_all)
 ```
 
 ## Seasonality in each cluster
 ```{r}
-df.sea <- data.frame(region1 = array(0, 24/avg_time), 
-                     region2  = array(0, 24/avg_time), 
-                     region3 = array(0, 24/avg_time))
+df.sea <- data.frame(cluster1 = array(0, 24/avg_time), 
+                     cluster2  = array(0, 24/avg_time), 
+                     cluster3 = array(0, 24/avg_time))
 
-tmp <- getSeasonality(df.new[df.new$region=="r1",], avg_time)
-df.sea$region1 <- tmp$conc
-tmp <- getSeasonality(df.new[df.new$region=="r2",], avg_time)
-df.sea$region2 <- tmp$conc
-tmp <- getSeasonality(df.new[df.new$region=="r3",], avg_time)
-df.sea$region3 <- tmp$conc
+tmp <- getSeasonality(df.new[df.new$cluster=="cluster1",], avg_time)
+df.sea$cluster1 <- tmp$conc
+tmp <- getSeasonality(df.new[df.new$cluster=="cluster2",], avg_time)
+df.sea$cluster2 <- tmp$conc
+tmp <- getSeasonality(df.new[df.new$cluster=="cluster3",], avg_time)
+df.sea$cluster3 <- tmp$conc
 df.sea$time <- as.POSIXct(tmp$x)
 
 df.sea.m <- melt(df.sea, id.vars = "time")
 
-plt <- ggplot(df.sea.m, aes(x = time, y = value, color = variable))+geom_line(size = 1.5)+
-  xlab("Time")+ylab("Seasonal concentration") + scale_x_datetime(date_labels = "%H") + labs(color = "Legend")
+plt_sea <- ggplot(df.sea.m, aes(x = time, y = value, color = variable))+geom_line(size = 2)+theme_gray(base_size = 24)+
+  xlab("Time (Hour of day)")+ylab('Conc. (ppm)')+ scale_x_datetime(date_labels = "%H") + labs(color = "")+
+  theme(legend.position=c(.38,.8), 
+        legend.box = "horizontal",
+        legend.background = element_rect(fill=alpha(colour = "white", alpha = 0.1)))+
+  guides(color=guide_legend(direction = "horizontal"))
 
 df.specs = "CO_seasonal_clust"
 formats = c("PDF", "PNG")
@@ -157,12 +162,40 @@ for(format in formats){
       png(filename=plot.filename,width=800,height=800,units="px",pointsize=20,bg="white")
   }
   
-  print(plt) #suppressMessages(print(plt))
+  print(plt_sea) #suppressMessages(print(plt))
   
   if(!is.na(format))
     dev.off()
 }  
-print(plt)
+print(plt_sea)
+
+final <- plot_grid(plt_all, plt_sea, nrow = 2,rel_heights = c(0.47,0.53))
+
+df.specs = "final_CO_seasonal_clust"
+formats = c("PDF", "PNG")
+plot.folder <- paste(folder,"/final_plots/",sep="")
+dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
+
+# record plot
+#	print(data)
+for(format in formats){
+  plot.filename <- paste(plot.folder,df.specs,".",format,sep="")
+  if(!is.na(format)){
+    if(format=="PDF")
+      pdf(file=plot.filename,bg="white")
+    else if(format=="PNG")
+      png(filename=plot.filename,width=800,height=800,units="px",pointsize=20,bg="white")
+  }
+  
+  print(final) #suppressMessages(print(plt))
+  
+  if(!is.na(format))
+    dev.off()
+}  
+
+print(final)
+
+
 
 
 ```
@@ -173,7 +206,7 @@ print(plt)
 ```{r scat_ws_conc, echo = TRUE, warning= FALSE, fig.height= 5}
 folder = "plots"
 df.specs = "Scat_onset_ws_deseasoned_clust"
-plot.Scat_ws_deseasoned(df.new, df.seasonal, df.specs, avg_time, clustering = TRUE)
+plt_1 <- plot.Scat_ws_deseasoned(df.new, df.seasonal, df.specs, avg_time, clustering = TRUE)
 
 ```
 
@@ -181,7 +214,53 @@ plot.Scat_ws_deseasoned(df.new, df.seasonal, df.specs, avg_time, clustering = TR
 
 ```{r scat_t_conc, echo = TRUE, warning= FALSE, fig.height= 5}
 df.specs = "Scat_t_deseasoned_clust"
-plot.Scat_t_deseasoned(df.new, df.seasonal, df.specs, avg_time, clustering = TRUE)
+plt_2 <- plot.Scat_t_deseasoned(df.new, df.seasonal, df.specs, avg_time, clustering = TRUE)
+ 
+plt_1 <- plt_1 + ylab("de-conc.")+
+  theme_gray(base_size = 21) + 
+  theme(legend.position=c(.9,.75), 
+        legend.box = "vertical",
+        legend.background = element_rect(fill=alpha(colour = "white", alpha = 0.1)))+
+  guides(color=guide_legend(direction = "vertical"))
+        # legend.text=element_text(size=18))
+
+plt_2 <- plt_2 + 
+  ylab("de-conc.")+
+  theme_gray(base_size = 21)+
+  theme(legend.position="bottom", 
+        legend.box = "horizontal",
+        legend.background = element_rect(fill=alpha(colour = "white", alpha = 0.1)))+
+  guides(color=guide_legend(direction = "horizontal"))
+        # legend.text=element_text(size=18))
+
+final <- plot_grid(plt_1, plt_2, nrow = 2,rel_heights = c(0.5,0.5))
+
+
+df.specs = "final_CO_corr_clust"
+formats = c("PDF", "PNG")
+plot.folder <- paste(folder,"/final_plots/",sep="")
+dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
+
+# record plot
+#	print(data)
+for(format in formats){
+  plot.filename <- paste(plot.folder,df.specs,".",format,sep="")
+  if(!is.na(format)){
+    if(format=="PDF")
+      pdf(file=plot.filename,bg="white")
+    else if(format=="PNG")
+      png(filename=plot.filename,width=800,height=800,units="px",pointsize=20,bg="white")
+  }
+  
+  print(final) #suppressMessages(print(plt))
+  
+  if(!is.na(format))
+    dev.off()
+}  
+
+print(final)
+
+
 
 ```
 
@@ -189,9 +268,10 @@ plot.Scat_t_deseasoned(df.new, df.seasonal, df.specs, avg_time, clustering = TRU
 ## Histogram for temperature
 
 ```{r}
-t.plt <- ggplot(df.new, aes(x = temp)) + facet_wrap(.~region)
-plt <- t.plt + geom_histogram(bins = 10, fill = "gray") + theme_gray(base_size = 14) + xlab(expression(paste("Temperature")))
-
+t.plt <- ggplot(df.new, aes(x = temp)) + facet_wrap(.~cluster)
+plt <- t.plt + geom_histogram(bins = 10, fill = "gray") + theme_gray(base_size = 24) + xlab(expression(paste("Temperature")))
+  # xlab(bquote('Temperature ('*^\circ~'C'~*')'))
+# ylab(bquote('Conc. ('*mu~'g'~m^-3*')'))
 
 df.specs = "clust_temp_hist"
 formats = c("PDF", "PNG")
@@ -215,6 +295,7 @@ for(format in formats){
     dev.off()
 }  
 print(plt)
+plt_1 <- plt+theme(axis.text.x = element_text(angle=90))#, legend.position = "bottom")
 ```
 
 
@@ -222,8 +303,12 @@ print(plt)
 ## Histogram for Wind speed
 
 ```{r}
-t.plt <- ggplot(df.new, aes(x = wspeed)) + facet_wrap(.~region)
-plt <- t.plt + geom_histogram(bins = 10, fill = "gray") + theme_gray(base_size = 14) + xlab(expression(paste("Wind Speed")))
+t.plt <- ggplot(df.new, aes(x = wspeed)) + facet_wrap(.~cluster)
+plt <- t.plt + 
+  geom_histogram(bins = 10, fill = "gray") + 
+  theme_gray(base_size = 24) + 
+  xlab(expression(paste("Wind Speed")))+
+  theme(axis.text.x = element_text(angle=90))#, legend.position = "bottom")
 
 
 df.specs = "clust_ws_hist"
@@ -248,4 +333,34 @@ for(format in formats){
     dev.off()
 }  
 print(plt)
+plt_2 <- plt
+
+final <- plot_grid(plt_2, plt_1, nrow = 2)
+df.specs = "final_CO_hist_clust"
+formats = c("PDF", "PNG")
+plot.folder <- paste(folder,"/final_plots/",sep="")
+dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
+
+# record plot
+#	print(data)
+for(format in formats){
+  plot.filename <- paste(plot.folder,df.specs,".",format,sep="")
+  if(!is.na(format)){
+    if(format=="PDF")
+      pdf(file=plot.filename,bg="white")
+    else if(format=="PNG")
+      png(filename=plot.filename,width=800,height=800,units="px",pointsize=20,bg="white")
+  }
+  
+  print(final) #suppressMessages(print(plt))
+  
+  if(!is.na(format))
+    dev.off()
+}  
+
+print(final)
+
+
+
+
 ```

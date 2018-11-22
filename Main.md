@@ -16,6 +16,7 @@ frequency_tolerance.c = 10
 frequency_tolerance.w = 10
 fault_window = "hours" # to identify faults in the data
 std_tolerance = 0.01
+folder = "plots"
 dir.create("plots",showWarnings=FALSE,recursive=TRUE)
 ```
 
@@ -89,7 +90,7 @@ Seasonality from August dataset
 Quantile plots
 --------------
 
-![](Main_files/figure-markdown_github/unnamed-chunk-6-1.png)
+![](Main_files/figure-markdown_github/unnamed-chunk-6-1.png)![](Main_files/figure-markdown_github/unnamed-chunk-6-2.png)![](Main_files/figure-markdown_github/unnamed-chunk-6-3.png)
 
 Effect of Wind Speed
 ====================
@@ -130,11 +131,11 @@ Effect of wind speed on de-seasoned data
 
 ``` r
 folder = "plots"
-df.specs = "Scat_ws_deseasoned"
+df.specs = "Scat_onset_ws_deseasoned"
 plot.Scat_ws_deseasoned(df.new, df.seasonal, df.specs, avg_time)
 ```
 
-![](Main_files/figure-markdown_github/scat_ws_conc-1.png)
+![](Main_files/figure-markdown_github/scat_ws_conc-1.png)![](Main_files/figure-markdown_github/scat_ws_conc-2.png)
 
 Effect of wind direction on concentration
 =========================================
@@ -277,4 +278,4 @@ df.specs = "Scat_t_deseasoned"
 plot.Scat_t_deseasoned(df.new, df.seasonal, df.specs, avg_time)
 ```
 
-![](Main_files/figure-markdown_github/scat_t_conc-1.png)
+![](Main_files/figure-markdown_github/scat_t_conc-1.png)![](Main_files/figure-markdown_github/scat_t_conc-2.png)

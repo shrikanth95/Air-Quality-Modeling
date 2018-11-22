@@ -16,7 +16,7 @@ plot.All_seasonality <- function(df.sea.w, type = "overview", title="Daily and W
   avg_time <- as.numeric(as.POSIXct(df.sea.w$time[2])-as.POSIXct(df.sea.w$time[1]))/60
   if(type == "all"){
     plt <- ggplot(df.sea.w, aes(x = hour, y =  conc, color= dow))+
-      ylab("Concentrations")+
+      ylab('Conc. (ppm)')+
       xlab("Time (Hours)")+
       geom_line(size = 2)+geom_point(size = 2.5) + 
       theme(axis.text.x = element_text(size = 16),
@@ -29,7 +29,7 @@ plot.All_seasonality <- function(df.sea.w, type = "overview", title="Daily and W
   }
   if(type == "overview"){
     plt <- ggplot(df.sea.w, aes(x = hour, y =  conc))+
-      ylab("Concentrations")+
+      ylab('Conc. (ppm)')+
       xlab("Time (Hours)")+
       geom_line(size = 1)+geom_point(size = 1.5) + 
       facet_wrap(.~dow, ncol= 3)+ theme_grey(base_size = 15) 
@@ -75,7 +75,7 @@ plot.dataset<-function(df.new, df.seasonal, df.specs, avg_time, folder = "plots"
   df.new.1.m <- melt(df.new.1, id.vars = "time")
   
   plt <- ggplot(df.new.1.m, aes(x = time, y = value))+
-    geom_line(size = 1)+theme_gray(base_size = 13)+
+    geom_line(size = 1)+theme_gray(base_size = 22)+
     facet_wrap(.~variable,nrow = 4,
                scales = "free_y",
                strip.position = "left", labeller = as_labeller(c(conc = "Conc.", 
@@ -157,14 +157,22 @@ plot.weekQuantiles_Aug<-function(avg_time, loc = "IISc", folder = "plots", forma
   }
   
   df.master <- read.csv(file = destfile, header = TRUE, sep = ",")
+  df.temp <- df.master[df.master$day!='Sunday',]
+  df.master.1 <- df.master
+  df.master <- rbind(df.temp, df.master.1[df.master.1$day=="Sunday",])
   df.master$Time <- as.POSIXct(df.master$Time)
   plt <- ggplot(df.master, aes(x = Time, y = Concentrations, color = type )) +
-    geom_line(size = 1) + scale_x_datetime(date_labels = "%H")+
-    facet_wrap(.~ day, ncol = 3)+
+    geom_line(size = 0.5) + scale_x_datetime(date_labels = "%H")+theme_grey(base_size = 18)+
+    facet_wrap(.~factor(day, levels=unique(day)), ncol = 2)+ylab('Conc. (ppm)')+
     ylim(0,3.5) + xlab("Time of day (Hour)")+
-    labs(color = "Legend") + 
+    labs(color = "") + 
     theme(legend.position="bottom", legend.box = "horizontal") +
-    theme_grey(base_size = 14)+ theme(axis.text.x = element_text(angle=0))#, legend.position = "bottom")
+    theme(aspect.ratio = 0.67,legend.position=c(.73,.12), 
+          legend.box = "horizontal",
+          legend.background = element_rect(fill=alpha(colour = "white", alpha = 0.1)))+
+    guides(color=guide_legend(direction = "horizontal",legend.text=element_text(size=18),nrow = 3))+
+    # theme(axis.ticks.length=unit(-0.25, "cm"))+
+    theme(axis.text.x = element_text(angle=0))#, legend.position = "bottom")
   
   plot.folder <- paste(folder,"/weekQuantiles_Aug/",sep="")
   dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
@@ -186,6 +194,7 @@ plot.weekQuantiles_Aug<-function(avg_time, loc = "IISc", folder = "plots", forma
       dev.off()
   }
   print(plt)
+  return(plt)
   # 
 }
 
@@ -258,7 +267,7 @@ plot.DF_faults<-function(df.new, df.specs, avg_time, folder = "plots",formats=c(
     geom_line() + 
     scale_colour_manual(values=c(Overall = "black", Faults = "red")) + 
     labs(color = "Legend") +  
-    ylab("Concentration") + 
+    ylab('Conc. (ppm)') + 
     xlab("Time")+
     theme_grey(base_size = 15)
   
@@ -294,7 +303,7 @@ plot.DF_Seasonal_c_ws<-function(df.seasonal, df.specs, avg_time, folder = "plots
   
   p1 <- ggplot(df.seasonal, aes(x = x, y = conc)) + 
     geom_line(size = 1) + geom_point(size = 1.5) + 
-    ylab("Concentration") + 
+    ylab('Conc. (ppm)') + 
     theme_grey(base_size = 12)+ 
     scale_x_datetime(date_labels = "%H") + 
     theme_grey(base_size = 15) + 
@@ -333,7 +342,7 @@ plot.DF_Seasonal_c_t<-function(df.seasonal, df.specs, avg_time, folder = "plots"
   
   p1 <- ggplot(df.seasonal, aes(x = x, y = conc)) + 
     geom_line(size = 1) + geom_point(size = 1.5) + 
-    ylab("Concentration") + 
+    ylab('Conc. (ppm)') + 
     theme_grey(base_size = 12)+ 
     scale_x_datetime(date_labels = "%H:%M") + 
     theme_grey(base_size = 15) + 
@@ -382,7 +391,7 @@ plot.Corr_ws_c<-function(df.seasonal, df.specs, avg_time, folder = "plots",forma
   df.seasonal$z.conc <- computeZscore(df.seasonal$conc)
   p1 <- ggplot(df.seasonal, aes(x = wspeed, y = conc)) + 
     geom_point(size = 2) + xlab("")+
-    ylab("Concentration") + ggtitle("Concentrations vs Wind Speeds") +
+    ylab('Conc. (ppm)') + ggtitle("Concentrations vs Wind Speeds") +
     scale_color_gradient(low="red", high="blue") + theme_grey(base_size = 14) + labs(color = "Wind Directions") #+ theme(legend.position="none")
   p2 <- ggplot(df.seasonal, aes(x = wspeed, y = z.conc)) + 
     geom_point(size = 2) + ggtitle("Z-score of Concentrations vs Wind Speeds") +
@@ -419,7 +428,7 @@ plot.Corr_t_c<-function(df.seasonal, df.specs, avg_time, folder = "plots",format
   p1 <- ggplot(df.seasonal, aes(x = temp, y = conc)) + 
     geom_point(size = 1.5) + 
     xlab("") + 
-    ylab("Concentration") + 
+    ylab('Conc. (ppm)') + 
     ggtitle("Concentrations vs Temperature over all days") +
     scale_color_gradient(low="red", high="blue") + 
     theme_grey(base_size = 14) + 
@@ -493,13 +502,12 @@ plot.Scat_ws_deseasoned<-function(df.new, df.seasonal, df.specs, avg_time, clust
   }
   else{
     plt<-  ggplot(df.new.1, aes(x = wspeed, y = desea, color = Set, shape = Set)) +
-      facet_wrap(.~region)+
-      geom_point(size = 3) + labs(size = "")+
+      facet_wrap(.~cluster)+theme_gray(base_size = 14)+ #+ 
+      geom_point(size = 3) + labs(size = "", shape = "", color = "")+
       xlab("Wind Speed") +
-      ylab("De-seasoned concentration") + 
+      ylab("De-seasoned concentration")
       # ggtitle("Concentrations vs Wind Speeds over all days") +
       # scale_color_gradient(low="red", high="blue") +
-      theme_gray(base_size = 14) #+ 
     
     plt <- plt + scale_shape_manual(values = c(0, 16)) + scale_colour_manual(values = c("chartreuse4", "slateblue4"))
   }
@@ -524,6 +532,7 @@ plot.Scat_ws_deseasoned<-function(df.new, df.seasonal, df.specs, avg_time, clust
       dev.off()
   }  
   print(plt)
+  return(plt)
 }
 
 
@@ -546,8 +555,8 @@ plot.Scat_t_deseasoned<-function(df.new, df.seasonal, df.specs, avg_time, cluste
   }
   else{
     plt<-  ggplot(df.new, aes(x = temp, y = desea, color = hour)) + 
-      facet_wrap(.~region)+
-      geom_point(size = 1.5) + 
+      facet_wrap(.~cluster)+
+      geom_point(size = 3) + 
       xlab("Temperature") + 
       ylab("De-seasoned concentration") + 
       # ggtitle("Concentrations vs Wind Speeds over all days") +
@@ -575,6 +584,7 @@ plot.Scat_t_deseasoned<-function(df.new, df.seasonal, df.specs, avg_time, cluste
       dev.off()
   }  
   print(plt)
+  return(plt)
 }
 
 # Plots the histogram plots of concentrations and wind direction
@@ -586,7 +596,7 @@ plot.Scat_t_deseasoned<-function(df.new, df.seasonal, df.specs, avg_time, cluste
 
 plot.Hist_conc_wd<-function(df.new, df.specs, avg_time, folder = "plots", formats = c("PDF", "PNG")){
   
-  plt<-ggplot(df.new, aes(x = wdir, y = conc)) + geom_point(aes(color = wspeed)) + xlab("Wind Direction") + ylab("Concentrations") + labs(color = "Wind Speed") + scale_color_gradient(low="blue", high="red") + theme_grey(base_size = 14) + ggtitle("Concentration vs Wind Direction")
+  plt<-ggplot(df.new, aes(x = wdir, y = conc)) + geom_point(aes(color = wspeed)) + xlab("Wind Direction") + ylab('Conc. (ppm)') + labs(color = "Wind Speed") + scale_color_gradient(low="blue", high="red") + theme_grey(base_size = 14) + ggtitle("Concentration vs Wind Direction")
   
   plot.folder <- paste(folder,"/Hist_conc_wd/",sep="")
   dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
@@ -650,7 +660,7 @@ plot.conc_ws_on_wd<-function(df.new, df.specs,avg_time, folder = "plots", format
     xlab("") + 
     ylab("Avg. Concentration") + 
     geom_point(size = 2) + 
-    theme_grey(base_size = 14) + 
+    theme_grey(base_size = 16) + 
     ggtitle("Concentration vs Wind Direction")+
     theme(legend.position="none")
   p2.2 <- ggplot(df.ws, aes(x = uni.x, y = val, color = type)) + 
@@ -660,7 +670,7 @@ plot.conc_ws_on_wd<-function(df.new, df.specs,avg_time, folder = "plots", format
     ylab("Avg. Wind Speed") + 
     geom_point(size= 2) + 
     labs(color = "")+
-    theme_grey(base_size = 14)+
+    theme_grey(base_size = 16)+
     ggtitle("Wind Speed vs Wind Direction")+
     theme(legend.position="bottom", legend.box = "horizontal")
   
@@ -884,7 +894,8 @@ plot.conc_on_ws<- function(df.new, df.seasonal, df.specs, avg_time, clustering =
   plt <- ggplot(df.m[df.m$variable!="var",], 
                aes(x = ws, y= value, color = variable)) + 
     geom_line(size = 1)+geom_point(size = 1.5)+
-    ylab("Concentration")  + xlab("Wind Speed (m/s)")+
+    # ylab(expression(paste("Concentration (",mu,"g/m")))  + xlab("Wind Speed (m/s)")+
+    ylab('Conc. (ppm)')  + xlab("Wind Speed (m/s)")+
     theme_grey(base_size = 14) + 
     scale_colour_manual(values =c('mean'='black','ql'='green', "qh" = "red"), 
                         labels = c(#"Avg. de-seasoned concentration",

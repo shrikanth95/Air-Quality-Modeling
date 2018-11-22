@@ -49,6 +49,7 @@ frequency_tolerance.c = 10
 frequency_tolerance.w = 10
 fault_window = "hours" # to identify faults in the data
 std_tolerance = 0.01
+folder = "plots"
 dir.create("plots",showWarnings=FALSE,recursive=TRUE)
 
 ```
@@ -121,8 +122,35 @@ plot.All_seasonality(df.sea.w, type = "overview")
 
 ## Quantile plots
 ```{r}
-plot.weekQuantiles_Aug(avg_time, loc = "IISc")
-plot.weekQuantiles_Aug(avg_time, loc = "Electronic_City")
+plt_1 <- plot.weekQuantiles_Aug(avg_time, loc = "IISc")
+plt_2 <- plot.weekQuantiles_Aug(avg_time, loc = "Electronic_City")
+
+final <- plot_grid(plt_1, plt_2, ncol = 2,rel_widths = c(0.5,0.5))
+
+
+df.specs = "Merge"
+formats = c("PDF", "PNG")
+plot.folder <- paste(folder,"/weekQuantiles_Aug/",sep="")
+dir.create(plot.folder,showWarnings=FALSE,recursive=TRUE)
+
+# record plot
+#	print(data)
+for(format in formats){
+  plot.filename <- paste(plot.folder,df.specs,".",format,sep="")
+  if(!is.na(format)){
+    if(format=="PDF")
+      pdf(file=plot.filename,bg="white")
+    else if(format=="PNG")
+      png(filename=plot.filename,width=800,height=800,units="px",pointsize=20,bg="white")
+  }
+  
+  print(final) #suppressMessages(print(plt))
+  
+  if(!is.na(format))
+    dev.off()
+}  
+
+print(final)
 ```
 
 
@@ -156,6 +184,7 @@ plot.Corr_ws_c(df.seasonal, df.specs, avg_time)
 folder = "plots"
 df.specs = "dataset"
 plot.dataset(df.new, df.seasonal, df.specs, avg_time)
+
 ```
 
 
@@ -292,3 +321,44 @@ df.specs = "Scat_t_deseasoned"
 plot.Scat_t_deseasoned(df.new, df.seasonal, df.specs, avg_time)
 
 ```
+
+
+```{r}
+C.df <- read.table(file = 'Raw Sensor Data/16_17_SEP_DATA_CLEAN.csv', header = TRUE, sep= ",")
+head(C.df)
+
+c.df.m = melt(C.df, id = c("Hours","Date"), variable.name = "Location", value.name = "Conc")
+
+plt <- ggplot(c.df.m, aes(x = Hours, y = Conc, color = cut(Date, c(-Inf, 16.5, Inf)))) + 
+  facet_wrap(.~Location, ncol = 3) + geom_point(size= 1) + 
+  scale_color_manual(name = "Date",
+                     values = c("(-Inf,16.5]" = "black",
+                                "(16.5, Inf]" = "red"),
+                     labels = c("16th (Sunday)", "17th (Monday)"))+
+  geom_line(size = 1)+
+  theme_gray(base_size = 22) + 
+  ylab("Concentration (PPM)")
+plt
+
+plot_grid(loc1, loc2, nrow= 2)
+df.clean <- C.df[complete.cases(C.df),]
+cor1 <- cor(x = df.clean$SILK.BOARD, y= df.clean$E.CITY.CLIMO, method = "pearson")
+cor2 <- cor(x = df.clean$HEBBAL, y= df.clean$CLIMO, method = "pearson")
+
+```
+
+Comparing mean over the day
+
+```{r}
+ds.time = 6
+mean.ecity = c()
+mean.silk = c()
+mean.heb = c()
+mean.iisc = c()
+
+for(i in 1:(24/ds.time)){
+  mean.ecity <- c(mean.ecity, mean(C.df$HEBBAL[]))
+}
+
+```
+
