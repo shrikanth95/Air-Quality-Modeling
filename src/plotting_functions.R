@@ -163,11 +163,11 @@ plot.weekQuantiles_Aug<-function(avg_time, loc = "IISc", folder = "plots", forma
   df.master$Time <- as.POSIXct(df.master$Time)
   plt <- ggplot(df.master, aes(x = Time, y = Concentrations, color = type )) +
     geom_line(size = 0.5) + scale_x_datetime(date_labels = "%H")+theme_grey(base_size = 18)+
-    facet_wrap(.~factor(day, levels=unique(day)), ncol = 2)+ylab('Conc. (ppm)')+
+    facet_wrap(.~factor(day, levels=unique(day)), nrow = 2)+ylab('Conc. (ppm)')+
     ylim(0,3.5) + xlab("Time of day (Hour)")+
     labs(color = "") + 
     theme(legend.position="bottom", legend.box = "horizontal") +
-    theme(aspect.ratio = 0.67,legend.position=c(.73,.12), 
+    theme(aspect.ratio = 0.67,legend.position=c(.87,.12), 
           legend.box = "horizontal",
           legend.background = element_rect(fill=alpha(colour = "white", alpha = 0.1)))+
     guides(color=guide_legend(direction = "horizontal",legend.text=element_text(size=18),nrow = 3))+
